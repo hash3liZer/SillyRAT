@@ -1,58 +1,64 @@
 #include <iostream>
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include "colors.h"
+#include "inputs.h"
 
 using namespace std;
 
-class CONNECTION{
-protected:
+class SERVER{
+private:
+	COLORS color;
 	string sockAddr;
 	int port;
 
 public:
-	void listen();
-	void connect();
-	void bind();
-};
-
-class SERVER: public CONNECTION{
-private:
-	COLORS color;
-
-public:
 	// Constuction
 	SERVER(){
-        this->sockAddr = "127.0.0.1";
-        this->port     = 1876;
+        this->sockAddr = "0.0.0.0";
+        this->port     = 54000;
     }
     SERVER(const string sockAddr){
         this->sockAddr = sockAddr;
-        this->port     = 1876;
+        this->port     = 54000;
     }
     SERVER(const int port){
-        this->sockAddr = "127.0.0.1";
-        this->port     = 1876;
+        this->sockAddr = "0.0.0.0";
+        this->port     = port;
     }
     SERVER(const string sockAddr, const int port){
         this->sockAddr = sockAddr;
         this->port     = port;
     }
 
-	void initiate(){
-		cout << "\t\t****************************" << endl;
-		cout << "\t\t****************************" << endl;
-		cout << "\t\t          SillyRAT          " << endl;
-		cout << "\t\t****************************" << endl;
-		cout << "\t\t****************************" << endl << endl;
+	// Variable Setter
+	void setVars(const string addr, const int port){
+		this->sockAddr = addr;
+		this->port     = port;
 	}
 
-	bool bind(){
-		
+	bool checkConnection(){
+		int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+		if (serverSocket >= 0){
+			sockaddr_in ipFam;
+			ipFam.sin_family = AF_INET;
+			ipFam.sin_port   = htons(this->port);
+			inet_pton(AF_INET, sockAddr.c_str(), &ipFam.sin_addr);
+
+			if(bind(serverSocket, (struct sockaddr *) &ipFam, sizeof(ipFam)) == 0){
+				return true;
+			}
+		}
+		return false;
 	}
 
-	void engage(){
+	void engageServer(){
 		cout << color.DARKCYAN << "[>] " << color.END << "Binding to ADDRESS: " << color.DARKCYAN << this->sockAddr << ":" << this->port << endl;
-		if(!(bind())){
+		if((checkConnection())){
 			
 		}else{
 			cout << color.RED << "[~] " << color.END << "Binding Failed. Check Your Address:Port" << endl;
@@ -60,11 +66,24 @@ public:
 	}
 };
 
-int main(){
-	SERVER SillyServer;
+int main(int argc, char* argv[]){
+	INPUT svInputs;
 
-	SillyServer.initiate();
-	SillyServer.engage();
+	svInputs.getLogo();
+	svInputs.getAddress();
+	svInputs.getPort();
+	
+	if(svInputs.rtAddress() != "" && svInputs.rtPort() != 0){
+		SERVER SillyServer(svInputs.rtAddress(), svInputs.rtPort());
+	}else if(svInputs.rtAddress() != ""){
+		SERVER SillyServer(svInputs.rtAddress());
+	}else if(svInputs.rtPort() != 0){
+		SERVER SillyServer(svInputs.rtPort());
+	}else{
+		SERVER SillyServer;
+	}
 
-	system("pause");
+	#ifdef SillyServer
+	SillyServer.engageServer();
+	#endif
 }
