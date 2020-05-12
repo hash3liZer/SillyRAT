@@ -20,6 +20,15 @@ public:
         std::cout << "             |___/                    " << std::endl;
         std::cout << color.GREEN << "                     v1.0 @hash3liZer/@TheFlash2k	" << color.END << std::endl << std::endl;
     }
+    void getServerHelp(){
+        std::cout << std::endl;
+        std::cout << color.BOLD << "    Command      :     Description                     " << color.END << std::endl;
+        std::cout << "    help         :     Show this Manual                " << std::endl;
+        std::cout << "    sessions     :     List Available Sessions ids     " << std::endl;
+        std::cout << "    connect <id> :     Connect to a specific session with given <id>" << std::endl;
+        std::cout << "    exit         :     Exit the Terminal and the Server" << std::endl;
+        std::cout << std::endl;
+    }
     void getAddress(){
         std::cout << color.DARKCYAN << "[?] " << color.END << "Enter Binding Address (0.0.0.0): ";
         std::getline(std::cin, this->address);

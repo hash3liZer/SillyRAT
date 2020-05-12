@@ -30,6 +30,8 @@ public:
 
             if(this->inputSv == "exit"){
                 break;
+            }else if(this->inputSv == "help"){
+                this->inputIf.getServerHelp();
             }
         }
     }
