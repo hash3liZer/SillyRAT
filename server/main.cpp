@@ -5,13 +5,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <thread>
 #include "colors.h"
 #include "inputs.h"
 #include "interface.h"
+#include "server.h"
 
 using namespace std;
 
-class SERVER{
+class UPFRONT{
 private:
 	COLORS color;
 	string sockAddr;
@@ -20,21 +22,9 @@ private:
 
 public:
 	// Constuction
-	SERVER(){
+	UPFRONT(){
         this->sockAddr = "0.0.0.0";
         this->port     = 54000;
-    }
-    SERVER(const string sockAddr){
-        this->sockAddr = sockAddr;
-        this->port     = 54000;
-    }
-    SERVER(const int port){
-        this->sockAddr = "0.0.0.0";
-        this->port     = port;
-    }
-    SERVER(const string sockAddr, const int port){
-        this->sockAddr = sockAddr;
-        this->port     = port;
     }
 
 	// Variable Setters
@@ -68,24 +58,6 @@ public:
 		return false;
 	}
 
-	bool establishSv(){
-		this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (serverSocket >= 0){
-			sockaddr_in ipFam;
-			ipFam.sin_family = AF_INET;
-			ipFam.sin_port   = htons(this->port);
-			inet_pton(AF_INET, sockAddr.c_str(), &ipFam.sin_addr);
-
-			if(bind(serverSocket, (struct sockaddr *) &ipFam, sizeof(ipFam)) == 0){
-				if(listen(serverSocket, SOMAXCONN) == 0){
-					return true;
-				}
-			}
-		}
-		close(serverSocket);
-		return false;
-	}
-
 	void interfaceSv(){
 		cout << color.DARKCYAN << "[>] " << color.END << "Here's Your Terminal. Enter 'help' to show available Commands" << endl;
 		cout << endl;
@@ -96,12 +68,12 @@ public:
 	void engageServer(){
 		cout << color.DARKCYAN << "[>] " << color.END << "Binding to ADDRESS: " << color.DARKCYAN << this->sockAddr << ":" << this->port << color.END << endl;
 		if((this->checkConnection())){
-			bool conn = establishSv();
-			if(conn){
-				this->interfaceSv();
-			}else{
-				cout << color.RED << "[~] " << color.END << "Failed to Initiate the Server!" << endl;
-			}
+			SERVER *server_conn = new SERVER(this->sockAddr, this->port);
+			thread server_conn_thread = server_conn->retThread();
+			
+			this->interfaceSv();
+			
+			server_conn_thread.join();
 		}else{
 			cout << color.RED << "[~] " << color.END << "Binding Failed. Check Your Address:Port" << endl;
 		}
@@ -110,7 +82,7 @@ public:
 
 int main(int argc, char* argv[]){
 	INPUT svInputs;
-	SERVER SillyServer;
+	UPFRONT SillyServer;
 
 	svInputs.getLogo();
 	svInputs.getAddress();

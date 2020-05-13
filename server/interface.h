@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstring>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ public:
                 break;
             }else if(this->inputSv == "help"){
                 this->inputIf.getServerHelp();
+            }else if(this->inputSv.rfind("sessions", 0) == 0){
+                cout << inputSv << endl;
             }
         }
     }
