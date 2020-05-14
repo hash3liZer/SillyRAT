@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>  
+#include <sys/time.h>
 #include <thread>
 
 using namespace std;
@@ -37,7 +39,11 @@ public:
         }
     }
     void establishConn(){
+        int opt = 1;
+        int max_fd;
+
         this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
+        setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
  
         // Bind the ip address and port to a socket
         sockaddr_in hint;
@@ -51,25 +57,44 @@ public:
         listen(server_socket, SOMAXCONN);
 
         fd_set master;
-        FD_ZERO(&master);
-        FD_SET(server_socket, &master);
+        int fd;
 
         int client_socket;
         sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
 
-        while(runner){
-            fd_set copy = master;
-            int socket_count = select(0, &copy, nullptr, nullptr, nullptr);
+        struct timeval tv;
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
 
-            for(int i=0; i<socket_count; i++){
-                if(FD_ISSET(i, &copy)){
-                    if(i == server_socket){
-                        client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
-                        cout << "Received a Client" << endl;
-                    }else{
-                        cout << "Received Message!" << endl;
-                    }
+        while(runner){
+            FD_ZERO(&master);
+            FD_SET(server_socket, &master);
+            max_fd = server_socket;
+
+            for(int i=0; i<SOMAXCONN; i++){
+                fd = clients[i];
+                if(fd > 0){
+                    FD_SET(fd, &master);
+                }
+                if(fd > max_fd){
+                    max_fd = fd;
+                }
+            }
+
+            int socket_count = select(max_fd+1, &master, nullptr, nullptr, nullptr);
+
+            if(FD_ISSET(server_socket, &master)){
+                client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
+                if(client_socket >= 0){
+                    cout << "Connectioned Received!" << endl;
+                }
+            }
+
+            for(int i=0; i<SOMAXCONN; i++){
+                if(clients[i] == 0){
+                    clients[i] = client_socket;
+                    break;
                 }
             }
         }
