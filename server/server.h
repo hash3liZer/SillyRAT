@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>  
 #include <sys/time.h>
+#include <vector>
+#include <map>
 #include <thread>
 
 using namespace std;
@@ -17,7 +19,9 @@ private:
     string server_address;
     int server_port;
     int server_socket;
-    int clients[SOMAXCONN];
+    COLORS color;
+    std::map<int, std::string> client_sockets;
+    std::map<int, std::string>::iterator client_sockets_it;
 
 public:
     SERVER(const string addr, const int pt){
@@ -25,18 +29,26 @@ public:
         this->server_address = addr;
         this->server_socket  = 0;
         this->server_port    = pt;
-
-        for(int i=0; i<SOMAXCONN; i++){
-            clients[i] = 0;
-        }
     }
     void setRunner(const bool val){
         runner = val;
+    }
+    std::map<int, std::string> retClients(){
+        return this->client_sockets;
     }
     void acceptor_thread(){
         while(runner){
 
         }
+    }
+    bool sendData(const int client_socket, string to_send){
+        if(send(client_socket, to_send.c_str(), strlen(to_send.c_str()), 0) != strlen(to_send.c_str())){
+            return false;
+        }
+        return true;
+    }
+    std::string receiveData(const int client_socket){
+        return "";
     }
     void establishConn(){
         int opt = 1;
@@ -45,7 +57,6 @@ public:
         this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
         setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
  
-        // Bind the ip address and port to a socket
         sockaddr_in hint;
         hint.sin_family = AF_INET;
         hint.sin_port = htons(server_port);
@@ -72,8 +83,8 @@ public:
             FD_SET(server_socket, &master);
             max_fd = server_socket;
 
-            for(int i=0; i<SOMAXCONN; i++){
-                fd = clients[i];
+            for(client_sockets_it=client_sockets.begin(); client_sockets_it != client_sockets.end(); client_sockets_it++){
+                fd = client_sockets_it->first;
                 if(fd > 0){
                     FD_SET(fd, &master);
                 }
@@ -87,15 +98,11 @@ public:
             if(FD_ISSET(server_socket, &master)){
                 client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
                 if(client_socket >= 0){
-                    cout << "Connectioned Received!" << endl;
                 }
             }
 
-            for(int i=0; i<SOMAXCONN; i++){
-                if(clients[i] == 0){
-                    clients[i] = client_socket;
-                    break;
-                }
+            if(client_sockets.count(client_socket) <= 0){
+                client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
             }
         }
     }
