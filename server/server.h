@@ -34,7 +34,7 @@ public:
         runner = val;
     }
     std::map<int, std::string> retClients(){
-        return this->client_sockets;
+        return client_sockets;
     }
     void acceptor_thread(){
         while(runner){
@@ -63,14 +63,12 @@ public:
         inet_pton(AF_INET, server_address.c_str(), &hint.sin_addr);
  
         bind(server_socket, (sockaddr*)&hint, sizeof(hint));
- 
-        // Tell Winsock the socket is for listening
         listen(server_socket, SOMAXCONN);
 
         fd_set master;
         int fd;
 
-        int client_socket;
+        int client_socket = 0;
         sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
 
@@ -93,7 +91,7 @@ public:
                 }
             }
 
-            int socket_count = select(max_fd+1, &master, nullptr, nullptr, nullptr);
+            int socket_count = select(max_fd+1, &master, nullptr, nullptr, &tv);
 
             if(FD_ISSET(server_socket, &master)){
                 client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
@@ -101,10 +99,15 @@ public:
                 }
             }
 
-            if(client_sockets.count(client_socket) <= 0){
-                client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
+            if(client_socket > 0){
+                if(client_sockets.count(client_socket) <= 0){
+                    client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
+                }
             }
         }
+    }
+    void close_connection(){
+        close(this->server_socket);
     }
     thread retThread(){
         thread rtval([=]{establishConn();});

@@ -6,10 +6,11 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <thread>
+
 #include "colors.h"
 #include "inputs.h"
-#include "interface.h"
 #include "server.h"
+#include "interface.h"
 
 using namespace std;
 
@@ -58,10 +59,11 @@ public:
 		return false;
 	}
 
-	void interfaceSv(){
+	void interfaceSv(SERVER *sv){
 		cout << color.DARKCYAN << "[>] " << color.END << "Here's Your Terminal. Enter 'help' to show available Commands" << endl;
 		cout << endl;
 		INTERFACE irface(this->sockAddr, this->port);
+		irface.setMiddleFace(sv);
 		irface.engage();
 	}
 
@@ -71,8 +73,11 @@ public:
 			SERVER *server_conn = new SERVER(this->sockAddr, this->port);
 			thread server_conn_thread = server_conn->retThread();
 			
-			this->interfaceSv();
+			this->interfaceSv(server_conn);
 			
+			cout << color.RED << "~ " << color.END << "Shutting Your Down! Have a Good Day!" << endl << endl;
+			server_conn->setRunner(false);
+			server_conn->close_connection();
 			server_conn_thread.join();
 		}else{
 			cout << color.RED << "[~] " << color.END << "Binding Failed. Check Your Address:Port" << endl;

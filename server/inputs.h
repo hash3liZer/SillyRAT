@@ -25,7 +25,9 @@ public:
         std::cout << color.BOLD << "    Command      :     Description                     " << color.END << std::endl;
         std::cout << "    help         :     Show this Manual                " << std::endl;
         std::cout << "    sessions     :     List Available Sessions ids     " << std::endl;
-        std::cout << "    connect <id> :     Connect to a specific session with given <id>" << std::endl;
+        std::cout << "    connect <fd> :     Connect to a specific session with given <fd>" << std::endl;
+        std::cout << "    disconnect   :     Disconnect from the current Client" << std::endl;
+        std::cout << "    shell        :     Launch Shell. Works After connection to client" << std::endl;
         std::cout << "    exit         :     Exit the Terminal and the Server" << std::endl;
         std::cout << std::endl;
     }
