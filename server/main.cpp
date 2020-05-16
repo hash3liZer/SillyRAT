@@ -6,7 +6,6 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <thread>
-
 #include "colors.h"
 #include "inputs.h"
 #include "server.h"
@@ -72,12 +71,15 @@ public:
 		if((this->checkConnection())){
 			SERVER *server_conn = new SERVER(this->sockAddr, this->port);
 			thread server_conn_thread = server_conn->retThread();
+			thread receive_conn_thread = server_conn->retThread2();
 			
 			this->interfaceSv(server_conn);
 			
-			cout << color.RED << "~ " << color.END << "Shutting Your Down! Have a Good Day!" << endl << endl;
+			cout << color.RED << "~ " << color.END << "Shutting You Down! Have a Good Day!" << endl << endl;
 			server_conn->setRunner(false);
 			server_conn->close_connection();
+
+			receive_conn_thread.join();
 			server_conn_thread.join();
 		}else{
 			cout << color.RED << "[~] " << color.END << "Binding Failed. Check Your Address:Port" << endl;
@@ -102,4 +104,5 @@ int main(int argc, char* argv[]){
 	}
 
 	SillyServer.engageServer();
+	return 0;
 }
