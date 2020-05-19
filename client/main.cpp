@@ -1,13 +1,12 @@
 #include<iostream>
 #include<string>
-#include<Windows.h>
-#include<WinInet.h>
+#include"execute.h"
 #include"client.h"
 
 #pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
-std::string TARGETIPADDRESS = "127.0.0.1";
+std::string TARGETIPADDRESS = "192.168.1.7";
 int TARGETPORT = 54000;
 
 class FRONTFACE{
@@ -42,6 +41,7 @@ public:
 			cout << "Binding to " << this->socket_address << ":" << this->socket_port << endl;
 			CLIENT *client_conn = new CLIENT(this->socket_address, this->socket_port);
 			client_conn->establishClient();
+			cout << "Out of Game Now!" << endl;
 		}
 	}
 };
