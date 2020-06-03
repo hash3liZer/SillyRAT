@@ -27,7 +27,9 @@ public:
         std::cout << "    sessions     :     List Available Sessions ids     " << std::endl;
         std::cout << "    connect <fd> :     Connect to a specific session with given <fd>" << std::endl;
         std::cout << "    disconnect   :     Disconnect from the current Client" << std::endl;
-        std::cout << "    shell        :     Launch Shell. Works After connection to client" << std::endl;
+        std::cout << "    shell        :     [Lev] Launch a normal Shell for executing commands" << std::endl;
+        std::cout << "    sysinfo      :     [Lev] Gives System Info." << std::endl;
+        std::cout << "    screenshot   :     [Lev] Takes screenshot from the system." << std::endl;
         std::cout << "    exit         :     Exit the Terminal and the Server" << std::endl;
         std::cout << std::endl;
     }

@@ -8,10 +8,15 @@
 #include <netinet/in.h>  
 #include <sys/time.h>
 #include <vector>
+#include <cstring>
 #include <map>
 #include <thread>
 
 using namespace std;
+typedef unsigned char uchar;
+
+// Base64 Encoding & Decoding
+static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=
 
 class SERVER{
 private:
@@ -24,8 +29,10 @@ private:
     COLORS color;
     std::map<int, std::string> client_sockets;
     std::map<int, std::string>::iterator client_sockets_it;
+    std::vector<int> invalid_sockets;
 
-    std::map<int, std::vector<string>> messages;
+    std::map<int, std::string> messages;
+    std::map<int, std::string>::iterator messages_it;
 
 public:
     SERVER(const string addr, const int pt){
@@ -40,19 +47,77 @@ public:
     std::map<int, std::string> retClients(){
         return client_sockets;
     }
-    bool sendData(const int client_socket, string to_send){
-        if(send(client_socket, to_send.c_str(), strlen(to_send.c_str()), 0) != strlen(to_send.c_str())){
+    std::string base64_encode(const std::string &in){
+        std::string out;
+
+        int val=0, valb=-6;
+        for (uchar c : in) {
+            val = (val<<8) + c;
+            valb += 8;
+            while (valb>=0) {
+                out.push_back(b[(val>>valb)&0x3F]);
+                valb-=6;
+            }
+        }
+        if (valb>-6) out.push_back(b[((val<<8)>>(valb+8))&0x3F]);
+        while (out.size()%4) out.push_back('=');
+        return out;
+    }
+    std::string base64_decode(const std::string &in){
+        std::string out;
+
+        std::vector<int> T(256,-1);
+        for (int i=0; i<64; i++) T[b[i]] = i;
+
+        int val=0, valb=-8;
+        for (uchar c : in) {
+            if (T[c] == -1) break;
+            val = (val<<6) + T[c];
+            valb += 6;
+            if (valb>=0) {
+                out.push_back(char((val>>valb)&0xFF));
+                valb-=8;
+            }
+        }
+        return out;
+    }
+    bool sendData(const int client_socket, string to_send, bool cmd=false){
+        string final_payload;
+        string payload = this->base64_encode(to_send);
+        if(cmd){
+            final_payload = base64_encode("true") + ":" + payload;
+        }else{
+            final_payload = payload;
+        }
+        int status = send(client_socket, final_payload.c_str(), strlen(final_payload.c_str()), 0);
+        if(status != 0){
+            return true;
+        }else{
             return false;
         }
-        return true;
     }
     std::string receiveData(const int client_socket){
-        char buffer[1025];
-        int check = read(client_socket, buffer, 1024);
-        if(check == 0){
-            cout << "Host Disconnected" << endl;
+        string rtval = "Timeout Occured! Didn't Received anything from the client!"; 
+        bool status = false;
+        for(int i=1; i <= 40; i++){
+            for(messages_it=messages.begin(); messages_it != messages.end(); messages_it++){
+                if(messages_it->first == client_socket){
+                    if(messages_it->second.length() > 0){
+                        rtval = messages_it->second;
+                        status = true;
+                        break;
+                    }
+                }
+            }
+            if(status){
+                break;
+            }
+            sleep(1);
         }
-        return "";
+        if(status){
+            this->messages.erase(client_socket);
+        }
+        return rtval;
     }
     void establishConn(){
         int opt = 1;
@@ -70,6 +135,10 @@ public:
         listen(server_socket, SOMAXCONN);
 
         int fd;
+        int md;
+        int client_read;
+        char recv_buffer[4096];
+        string recv_data;
 
         int client_socket = 0;
         sockaddr_in client_addr;
@@ -103,25 +172,24 @@ public:
                         client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
                     }
                 }
-            }
-        }
-    }
-    void receiveConn(){
-        char buffer[1025];
-        ssize_t check;
-        string message;
-        std::vector<std::string> appval;
-
-        int message_counter;
-
-        while(runner){
-            for(client_sockets_it=client_sockets.begin(); client_sockets_it!=client_sockets.end(); client_sockets_it++){
-                if(FD_ISSET(client_sockets_it->first, &master)){
-                    check = read(client_sockets_it->first, buffer, 1024);
-                    if(check == 0){
-                        client_sockets.erase(client_sockets_it->first);
-                    }else{
-                        cout << "Message Received!" << endl;
+            }else{
+                for(client_sockets_it=client_sockets.begin(); client_sockets_it != client_sockets.end(); client_sockets_it++){
+                    if(FD_ISSET(client_sockets_it->first, &master)){
+                        client_read = read(client_sockets_it->first, recv_buffer, 4095);
+                        if(client_read == 0){
+                            this->invalid_sockets.push_back(client_sockets_it->first);
+                        }else{
+                            recv_data = recv_buffer;
+                            this->messages.insert(std::pair<int, std::string>(client_sockets_it->first, recv_data));
+                        }
+                        memset(recv_buffer, 0, sizeof(recv_buffer));
+                        recv_data = "";
+                    }
+                }
+                // Removing Unwanted Sockets
+                if(invalid_sockets.size() > 0){
+                    for(int i=0; i<invalid_sockets.size(); i++){
+                        this->client_sockets.erase(invalid_sockets[i]);
                     }
                 }
             }
@@ -132,10 +200,6 @@ public:
     }
     thread retThread(){
         thread rtval([=]{establishConn();});
-        return rtval;
-    }
-    thread retThread2(){
-        thread rtval([=]{receiveConn();});
         return rtval;
     }
 };
