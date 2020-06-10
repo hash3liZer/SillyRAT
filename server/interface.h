@@ -112,6 +112,7 @@ public:
     void spawnShell(){
         if(this->current_address != ""){
             string ii;
+            string output;
             bool status;
 
             cout << endl;
@@ -127,7 +128,13 @@ public:
                     }else if(ii.length() > 0){
                         status = this->middle_face->sendData(current_descriptor, ii, true);
                         if(status){
-                            cout << this->middle_face->receiveData(current_descriptor) << endl;
+                            output = this->middle_face->receiveData(current_descriptor);
+                            if(output.length() > 0){
+                                cout << output << endl << endl;
+                            }else{
+                                cout << "Nothing Returned from Server!" << endl;
+                                cout << endl;
+                            }
                         }else{
                             cout << "# Send Command failed!" << endl;
                         }

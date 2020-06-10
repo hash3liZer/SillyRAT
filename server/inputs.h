@@ -60,6 +60,13 @@ public:
     }
 
     // Utilities
+    // Erase a Substring from string
+    void erase(std::string &upper, const std::string lower){
+		size_t pos = upper.find(lower);
+		if (pos != std::string::npos){
+			upper.erase(pos, lower.length());
+		}
+	}
     std::string trim(const std::string& str, const std::string& whitespace = " \t"){
         const auto strBegin = str.find_first_not_of(whitespace);
         if (strBegin == std::string::npos)

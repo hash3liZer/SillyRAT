@@ -26,7 +26,13 @@ private:
     int server_socket;
     fd_set master;
 
+    // Color Object
     COLORS color;
+
+    // Input Object
+    INPUT input;
+
+    // Maps for message and sockets
     std::map<int, std::string> client_sockets;
     std::map<int, std::string>::iterator client_sockets_it;
     std::vector<int> invalid_sockets;
@@ -89,6 +95,7 @@ public:
         }else{
             final_payload = payload;
         }
+        final_payload = final_payload + "abigbreakhere";
         int status = send(client_socket, final_payload.c_str(), strlen(final_payload.c_str()), 0);
         if(status != 0){
             return true;
@@ -104,6 +111,8 @@ public:
                 if(messages_it->first == client_socket){
                     if(messages_it->second.length() > 0){
                         rtval = messages_it->second;
+                        input.erase(rtval, "abigbreakhere");
+                        rtval = this->base64_decode(rtval);
                         status = true;
                         break;
                     }
@@ -139,6 +148,7 @@ public:
         int client_read;
         char recv_buffer[4096];
         string recv_data;
+        string final_data;
 
         int client_socket = 0;
         sockaddr_in client_addr;
@@ -165,25 +175,31 @@ public:
 
             int socket_count = select(max_fd+1, &master, nullptr, nullptr, &tv);
 
-            if(FD_ISSET(server_socket, &master)){
+            if(FD_ISSET(server_socket, &master)){  // Adding new Clients
                 client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
                 if(client_socket > 0){
                     if(client_sockets.count(client_socket) <= 0){
                         client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
                     }
                 }
-            }else{
+            }else{   //  Receiving Messages
                 for(client_sockets_it=client_sockets.begin(); client_sockets_it != client_sockets.end(); client_sockets_it++){
                     if(FD_ISSET(client_sockets_it->first, &master)){
-                        client_read = read(client_sockets_it->first, recv_buffer, 4095);
-                        if(client_read == 0){
+                        
+                        do{
+                            client_read = read(client_sockets_it->first, recv_buffer, 4095);
+                            if(client_read == 0){   //  Removing Clients which are disconnected
                             this->invalid_sockets.push_back(client_sockets_it->first);
-                        }else{
-                            recv_data = recv_buffer;
-                            this->messages.insert(std::pair<int, std::string>(client_sockets_it->first, recv_data));
-                        }
+                            }else{
+                                recv_data = recv_buffer;
+                                final_data += recv_data;
+                            }
+                        }while(recv_data.find("abigbreakhere") == string::npos);
+                        
+                        this->messages.insert(std::pair<int, std::string>(client_sockets_it->first, final_data));
                         memset(recv_buffer, 0, sizeof(recv_buffer));
                         recv_data = "";
+                        final_data = "";
                     }
                 }
                 // Removing Unwanted Sockets
