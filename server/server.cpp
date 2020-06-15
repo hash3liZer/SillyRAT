@@ -27,39 +27,21 @@ void SERVER::setRunner(const bool val){
 map<int, string> SERVER::retClients(){
     return client_sockets;
 }
-string SERVER::base64_encode(const std::string &in){
-    std::string out;
-
-    int val=0, valb=-6;
-    for (uchar c : in) {
-        val = (val<<8) + c;
-        valb += 8;
-        while (valb>=0) {
-            out.push_back(b[(val>>valb)&0x3F]);
-            valb-=6;
-        }
+bool SERVER::sendData(const int client_socket, string to_send, bool cmd){
+    string final_payload;
+    string payload = this->base64_encode(to_send);
+    if(cmd){
+        final_payload = base64_encode("true") + ":" + payload;
+    }else{
+       final_payload = payload;
     }
-    if (valb>-6) out.push_back(b[((val<<8)>>(valb+8))&0x3F]);
-    while (out.size()%4) out.push_back('=');
-    return out;
-}
-string SERVER::base64_decode(const string &in){
-    std::string out;
-
-    std::vector<int> T(256,-1);
-    for (int i=0; i<64; i++) T[b[i]] = i;
-
-    int val=0, valb=-8;
-    for (uchar c : in) {
-        if (T[c] == -1) break;
-        val = (val<<6) + T[c];
-        valb += 6;
-        if (valb>=0) {
-            out.push_back(char((val>>valb)&0xFF));
-            valb-=8;
-        }
+    final_payload += "abigbreakhere";
+    int status = send(client_socket, final_payload.c_str(), strlen(final_payload.c_str()), 0);
+    if(status != 0){
+        return true;
+    }else{
+        return false;
     }
-    return out;
 }
 string SERVER::receiveData(const int client_socket){
     string rtval = "Timeout Occured! Didn't Received anything from the client!"; 
@@ -69,6 +51,8 @@ string SERVER::receiveData(const int client_socket){
             if(messages_it->first == client_socket){
                 if(messages_it->second.length() > 0){
                     rtval = messages_it->second;
+                    eraseSubStr(rtval, "abigbreakhere");
+                    rtval = base64_decode(rtval);
                     status = true;
                     break;
                 }

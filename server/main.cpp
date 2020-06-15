@@ -12,7 +12,7 @@
 
 using namespace std;
 
-class UPFRONT{
+class UPFRONT: public STRINGER{
 private:
 	COLORS color;
 	string sockAddr;
