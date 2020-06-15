@@ -86,3 +86,15 @@ std::string INPUT::reduce(const std::string& str, const std::string& fill, const
     }
     return result;
 }
+// Overriden From Stringer
+std::string INPUT::eraseSubStr(std::string& mainStr, const std::string& toErase){
+	size_t pos = mainStr.find(toErase);
+ 
+	if (pos != std::string::npos)
+	{
+		// If found then erase it from string
+		mainStr.erase(pos, toErase.length());
+	}
+    std::string rtval = mainStr;
+    return rtval;
+}

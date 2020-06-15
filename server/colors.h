@@ -8,10 +8,13 @@
 // Base64 Encoding & Decoding
 
 typedef unsigned char uchar;
-static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 class STRINGER{
+protected:
+	std::string b;
+
 public:
+	STRINGER();
 	std::string base64_encode(const std::string&);
     std::string base64_decode(const std::string&);
 	void eraseSubStr(std::string&, const std::string&);

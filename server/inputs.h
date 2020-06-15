@@ -23,4 +23,5 @@ public:
     //std::string reduce(const std::string& str, const std::string& fill = " ", const std::string& whitespace = " \t")
     std::string reduce(const std::string&, const std::string&, const std::string&);
     // Removing a Subtring
+    std::string eraseSubStr(std::string&, const std::string&);
 };

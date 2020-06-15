@@ -3,6 +3,10 @@
 #include <vector>
 #include "colors.h"
 
+STRINGER::STRINGER(){
+	b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+}
+
 void STRINGER::eraseSubStr(std::string& mainStr, const std::string& toErase){
 	// Search for the substring in string
 	size_t pos = mainStr.find(toErase);
