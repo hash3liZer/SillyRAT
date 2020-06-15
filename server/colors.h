@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 
+#ifndef COLORS_H
+#define COLORS_H
+
 class COLORS{
 public:
 	std::string WHITE;
@@ -21,3 +24,5 @@ public:
 	std::vector<std::string> split(std::string, const char);
 	void showLiner(const std::string, const int);
 };
+
+#endif
