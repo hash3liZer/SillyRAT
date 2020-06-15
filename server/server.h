@@ -26,13 +26,7 @@ private:
     int server_socket;
     fd_set master;
 
-    // Color Object
     COLORS color;
-
-    // Input Object
-    INPUT input;
-
-    // Maps for message and sockets
     std::map<int, std::string> client_sockets;
     std::map<int, std::string>::iterator client_sockets_it;
     std::vector<int> invalid_sockets;
@@ -41,181 +35,14 @@ private:
     std::map<int, std::string>::iterator messages_it;
 
 public:
-    SERVER(const string addr, const int pt){
-        this->runner         = true;
-        this->server_address = addr;
-        this->server_socket  = 0;
-        this->server_port    = pt;
-    }
-    void setRunner(const bool val){
-        runner = val;
-    }
-    std::map<int, std::string> retClients(){
-        return client_sockets;
-    }
-    std::string base64_encode(const std::string &in){
-        std::string out;
-
-        int val=0, valb=-6;
-        for (uchar c : in) {
-            val = (val<<8) + c;
-            valb += 8;
-            while (valb>=0) {
-                out.push_back(b[(val>>valb)&0x3F]);
-                valb-=6;
-            }
-        }
-        if (valb>-6) out.push_back(b[((val<<8)>>(valb+8))&0x3F]);
-        while (out.size()%4) out.push_back('=');
-        return out;
-    }
-    std::string base64_decode(const std::string &in){
-        std::string out;
-
-        std::vector<int> T(256,-1);
-        for (int i=0; i<64; i++) T[b[i]] = i;
-
-        int val=0, valb=-8;
-        for (uchar c : in) {
-            if (T[c] == -1) break;
-            val = (val<<6) + T[c];
-            valb += 6;
-            if (valb>=0) {
-                out.push_back(char((val>>valb)&0xFF));
-                valb-=8;
-            }
-        }
-        return out;
-    }
-    bool sendData(const int client_socket, string to_send, bool cmd=false){
-        string final_payload;
-        string payload = this->base64_encode(to_send);
-        if(cmd){
-            final_payload = base64_encode("true") + ":" + payload;
-        }else{
-            final_payload = payload;
-        }
-        final_payload = final_payload + "abigbreakhere";
-        int status = send(client_socket, final_payload.c_str(), strlen(final_payload.c_str()), 0);
-        if(status != 0){
-            return true;
-        }else{
-            return false;
-        }
-    }
-    std::string receiveData(const int client_socket){
-        string rtval = "Timeout Occured! Didn't Received anything from the client!"; 
-        bool status = false;
-        for(int i=1; i <= 40; i++){
-            for(messages_it=messages.begin(); messages_it != messages.end(); messages_it++){
-                if(messages_it->first == client_socket){
-                    if(messages_it->second.length() > 0){
-                        rtval = messages_it->second;
-                        input.erase(rtval, "abigbreakhere");
-                        rtval = this->base64_decode(rtval);
-                        status = true;
-                        break;
-                    }
-                }
-            }
-            if(status){
-                break;
-            }
-            sleep(1);
-        }
-        if(status){
-            this->messages.erase(client_socket);
-        }
-        return rtval;
-    }
-    void establishConn(){
-        int opt = 1;
-        int max_fd;
-
-        this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
-        setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
- 
-        sockaddr_in hint;
-        hint.sin_family = AF_INET;
-        hint.sin_port = htons(server_port);
-        inet_pton(AF_INET, server_address.c_str(), &hint.sin_addr);
- 
-        bind(server_socket, (sockaddr*)&hint, sizeof(hint));
-        listen(server_socket, SOMAXCONN);
-
-        int fd;
-        int md;
-        int client_read;
-        char recv_buffer[4096];
-        string recv_data;
-        string final_data;
-
-        int client_socket = 0;
-        sockaddr_in client_addr;
-        socklen_t client_len = sizeof(client_addr);
-
-        struct timeval tv;
-        tv.tv_sec = 0.5;
-        tv.tv_usec = 0;
-
-        while(runner){
-            FD_ZERO(&master);
-            FD_SET(server_socket, &master);
-            max_fd = server_socket;
-
-            for(client_sockets_it=client_sockets.begin(); client_sockets_it != client_sockets.end(); client_sockets_it++){
-                fd = client_sockets_it->first;
-                if(fd > 0){
-                    FD_SET(fd, &master);
-                }
-                if(fd > max_fd){
-                    max_fd = fd;
-                }
-            }
-
-            int socket_count = select(max_fd+1, &master, nullptr, nullptr, &tv);
-
-            if(FD_ISSET(server_socket, &master)){  // Adding new Clients
-                client_socket = accept(server_socket, (sockaddr *) &client_addr, &client_len);
-                if(client_socket > 0){
-                    if(client_sockets.count(client_socket) <= 0){
-                        client_sockets.insert(std::pair<int, std::string>(client_socket, inet_ntoa(client_addr.sin_addr)));
-                    }
-                }
-            }else{   //  Receiving Messages
-                for(client_sockets_it=client_sockets.begin(); client_sockets_it != client_sockets.end(); client_sockets_it++){
-                    if(FD_ISSET(client_sockets_it->first, &master)){
-                        
-                        do{
-                            client_read = read(client_sockets_it->first, recv_buffer, 4095);
-                            if(client_read == 0){   //  Removing Clients which are disconnected
-                            this->invalid_sockets.push_back(client_sockets_it->first);
-                            }else{
-                                recv_data = recv_buffer;
-                                final_data += recv_data;
-                            }
-                        }while(recv_data.find("abigbreakhere") == string::npos);
-                        
-                        this->messages.insert(std::pair<int, std::string>(client_sockets_it->first, final_data));
-                        memset(recv_buffer, 0, sizeof(recv_buffer));
-                        recv_data = "";
-                        final_data = "";
-                    }
-                }
-                // Removing Unwanted Sockets
-                if(invalid_sockets.size() > 0){
-                    for(int i=0; i<invalid_sockets.size(); i++){
-                        this->client_sockets.erase(invalid_sockets[i]);
-                    }
-                }
-            }
-        }
-    }
-    void close_connection(){
-        close(this->server_socket);
-    }
-    thread retThread(){
-        thread rtval([=]{establishConn();});
-        return rtval;
-    }
+    SERVER(const string, const int);
+    void setRunner(const bool);
+    map<int,string> retClients();
+    string base64_encode(const string&);
+    string base64_decode(const string&);
+    bool sendData(const int client_socket, string to_send, bool cmd=false);
+    string receiveData(const int);
+    void establishConn();
+    void close_connection();
+    thread retThread();
 };

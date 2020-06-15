@@ -8,9 +8,6 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <thread>
-#include "colors.h"
-#include "inputs.h"
-#include "server.h"
 #include "interface.h"
 
 using namespace std;
