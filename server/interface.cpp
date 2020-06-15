@@ -184,6 +184,16 @@ void INTERFACE::engage(){
                 this->sysinfoSession();
             }else if(this->inputSv.rfind("shell", 0) == 0){
                 this->spawnShell();
+            }else if(this->inputSv.rfind("get", 0) == 0){
+                cout << color.RED << "~ " << color.END << "Feature Under Development" << endl;
+            }else if(this->inputSv.rfind("put", 0) == 0){
+                cout << color.RED << "~ " << color.END << "Feature Under Development" << endl;
+            }else if(this->inputSv.rfind("powershell", 0) == 0){
+                cout << color.RED << "~ " << color.END << "Feature Under Development" << endl;
+            }else if(this->inputSv.rfind("keylogger", 0) == 0){
+                cout << color.RED << "~ " << color.END << "Feature Under Development" << endl;
+            }else if(this->inputSv.rfind("shellpop", 0) == 0){
+                cout << color.RED << "~ " << color.END << "Feature Under Development" << endl;
             }else{
                 if(this->inputSv != ""){
                     cout << color.RED << "~ " << color.END << "Invalid Command!" << endl;
