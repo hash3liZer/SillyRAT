@@ -11,6 +11,7 @@
 #include <cstring>
 #include <map>
 #include <thread>
+#include "colors.h"
 
 using namespace std;
 typedef unsigned char uchar;
@@ -40,7 +41,21 @@ public:
     map<int,string> retClients();
     string base64_encode(const string&);
     string base64_decode(const string&);
-    bool sendData(const int client_socket, string to_send, bool cmd=false);
+    bool sendData(const int client_socket, string to_send,bool cmd=false){
+        string final_payload;
+        string payload = this->base64_encode(to_send);
+        if(cmd){
+            final_payload = base64_encode("true") + ":" + payload;
+        }else{
+           final_payload = payload;
+        }
+        int status = send(client_socket, final_payload.c_str(), strlen(final_payload.c_str()), 0);
+        if(status != 0){
+            return true;
+        }else{
+            return false;
+        }
+    }
     string receiveData(const int);
     void establishConn();
     void close_connection();

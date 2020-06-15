@@ -2,6 +2,7 @@
 #include <string>
 #include <cstring>
 #include <climits>
+#include "colors.h"
 
 class INPUT{
 private:
