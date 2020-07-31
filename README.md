@@ -26,6 +26,9 @@
     <li>Downloading and Uploading Files</li>
 </ul>
 
+### Updates
+The tool is being ported to Python...
+
 ### Installation
 Currently, you have to compile from the source code. As soon as the Client Part is fully functionaly and complete, we will provide binaries. The **.cpp** file in **client** folder is currently in testing phase and is only provided to test the working of server interface. Following commands will do the necessary work: 
 ```
