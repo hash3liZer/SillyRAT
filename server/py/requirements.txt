@@ -1,2 +1,4 @@
 tabulate==0.8.2
-py2exe==0.9.2.2
+pyinstaller==3.6
+pynput==1.6.8
+psutil==5.7.0
