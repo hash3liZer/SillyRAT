@@ -188,6 +188,55 @@ class PULL:
         print("$ disconnect")
         sys.stdout.write("\n")
 
+    def help_c_clear(self):
+        sys.stdout.write("\n")
+        print("Info       : Clear screen!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ clear")
+        sys.stdout.write("\n")
+
+    def help_c_shell(self):
+        sys.stdout.write("\n")
+        print("Info       : Launch a shell against client!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ shell")
+        sys.stdout.write("\n")
+
+    def help_c_keylogger(self):
+        sys.stdout.write("\n")
+        print("Info       : Keylogger Module!")
+        print("Arguments  : on, off, dump")
+        print("Example    : \n")
+        print("$ keylogger on")
+        print("$ keylogger off")
+        print("$ keylogger dump\n")
+        headers = (pull.BOLD + 'Argument' + pull.END, pull.BOLD + 'Description' + pull.END)
+        lister  = [
+            ('on', 'Turn Keylogger on'),
+            ('off', 'Turn Keylogger off'),
+            ('dump', 'Dump keylogs')
+        ]
+        print(tabulate.tabulate(lister, headers=headers))
+        sys.stdout.write("\n")
+
+    def help_c_sysinfo(self):
+        sys.stdout.write("\n")
+        print("Info       : Gathers system information!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ sysinfo")
+        sys.stdout.write("\n")
+
+    def help_c_screenshot(self):
+        sys.stdout.write("\n")
+        print("Info       : Screenshot the current screen and save it on server!")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ screenshot")
+        sys.stdout.write("\n")
+
     def help_overall(self):
         global __HELP_OVERALL__
         print(__HELP_OVERALL__)
@@ -268,6 +317,16 @@ class COMMCENTER:
                 pull.help_c_connect()
             elif vals[1] == "disconnect":
                 pull.help_c_disconnect()
+            elif vals[1] == "clear":
+                pull.help_c_clear()
+            elif vals[1] == "shell":
+                pull.help_c_shell()
+            elif vals[1] == "keylogger":
+                pull.help_c_keylogger()
+            elif vals[1] == "sysinfo":
+                pull.help_c_sysinfo()
+            elif vals[1] == "screenshot":
+                pull.help_c_screenshot()
         else:
             if self.CURRENT:
                 pull.help_c_current()
