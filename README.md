@@ -98,10 +98,6 @@ Help on a Specific Command:
 $ help COMMAND
 ```
 
-## Screenshots
-<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/84919904-23eb2f80-b0e0-11ea-81b6-49f336818651.png"></h6>
-<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/84920148-6b71bb80-b0e0-11ea-811b-bfa5bd0e3945.png"></h6>
-<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/84920570-f8b51000-b0e0-11ea-89f9-d5cb2f95cc7c.png"></h6>
-
 ### Support
 Twitter: <a href="//twitter.com/hash3liZer">@hash3liZer</a><br>
+Discord: TheFlash2k#0407
