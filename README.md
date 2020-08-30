@@ -2,6 +2,12 @@
     <img src="https://user-images.githubusercontent.com/29171692/89164677-00e3e480-d595-11ea-9cf1-f27ab1faf432.png" alt="SillyRAT" /> <br>    
     SillyRAT
 </h1>
+<p align="center">
+    <a href="#" target="_blank"><img src="https://img.shields.io/badge/platform-cross-important" alt="platform: cross" /></a>
+    <a href="https://www.python.org/" target="_blank"><img src="https://img.shields.io/badge/Python-3-yellow.svg?logo=python" alt="Python: 3" /></a>
+    <a href="https://github.com/hash3liZer/SillyRAT/releases" target="_blank"><img src="https://img.shields.io/badge/version-v1.0-blue.svg?logo=moo" alt="Release: v3.1" /></a>
+    <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="lisence" /></a>
+</p>
 <h4 align="center"> A Cross Platform multifunctional (Windows/Linux/Mac) RAT.</h4>
 
 <h6 align="center"><img src="https://user-images.githubusercontent.com/29171692/89173201-81104700-d5a1-11ea-8d93-f1d6eedc11c6.png"></h6>
