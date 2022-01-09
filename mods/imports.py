@@ -3,6 +3,7 @@ import io
 import os
 import platform
 import shlex
+import shutil
 import signal
 import socket
 import subprocess
