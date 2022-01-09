@@ -721,7 +721,7 @@ class GENERATOR:
         t = threading.Thread(target=PyInstaller.__main__.run, args=([
             '--name=%s' % os.path.basename(self.output),
             '--onefile',
-            '--windowed',
+            '--nowindow',
             '--log-level=ERROR',
             '--distpath=%s' % os.path.dirname(self.output),
             '--workpath=%s' % self.flname[0],
