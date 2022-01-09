@@ -122,6 +122,9 @@ $ help COMMAND
 ```
 
 ### Support
-
-Twitter: <a href="//twitter.com/hash3liZer">@hash3liZer</a><br>
-Discord: TheFlash2k#0407
+- Original
+    1. Twitter: <a href="//twitter.com/hash3liZer">@hash3liZer</a><br>
+    2. Discord: TheFlash2k#0407
+- Fork (Improved)
+    1. Discord: `ZeaCeR#5641`
+    2. Website: http://hirusha.xyz
