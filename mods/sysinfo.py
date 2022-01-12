@@ -10,19 +10,19 @@ class SYSINFO:
         self.cpu_info = self.get_cpu_info()
         self.mem_usage = self.get_mem_usage()
         self.disk_info = self.get_disk_info()
-        self.net_info  = self.get_net_info()
+        self.net_info = self.get_net_info()
 
     def get_size(self, bolter, suffix="B"):
         factor = 1024
         for unit in ["", "K", "M", "G", "T", "P"]:
             if bolter < factor:
                 return f"{bolter:.2f}{unit}{suffix}"
-            
+
             bolter /= factor
 
     def get_sys_info(self):
         headers = ("Platform Tag", "Information")
-        values  = []
+        values = []
 
         uname = platform.uname()
 
@@ -32,25 +32,26 @@ class SYSINFO:
         values.append(("Version", uname.version))
         values.append(("Machine", uname.machine))
         values.append(("Processor", uname.processor))
-        
+
         rtval = tabulate.tabulate(values, headers=headers)
         return rtval
 
     def get_boot_time(self):
         headers = ("Boot Tags", "Information")
-        values  = []
+        values = []
 
         boot_time_timestamp = psutil.boot_time()
         bt = datetime.fromtimestamp(boot_time_timestamp)
 
-        values.append(("Boot Time", f"{bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}:{bt.second}"))
+        values.append(
+            ("Boot Time", f"{bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}:{bt.second}"))
 
         rtval = tabulate.tabulate(values, headers=headers)
         return rtval
 
     def get_cpu_info(self):
         headers = ("CPU Tag", "Value")
-        values  = []
+        values = []
 
         cpufreq = psutil.cpu_freq()
 
@@ -60,13 +61,13 @@ class SYSINFO:
         values.append(("Min Frequency", f"{cpufreq.min:.2f}Mhz"))
         values.append(("Current Frequency", f"{cpufreq.current:.2f}Mhz"))
         values.append(("CPU Usage", f"{psutil.cpu_percent()}%"))
-        
+
         rtval = tabulate.tabulate(values, headers=headers)
         return rtval
 
     def get_mem_usage(self):
         headers = ("Memory Tag", "Value")
-        values  = []
+        values = []
 
         svmem = psutil.virtual_memory()
         swap = psutil.swap_memory()
@@ -75,17 +76,18 @@ class SYSINFO:
         values.append(("Available Mem", f"{self.get_size(svmem.available)}"))
         values.append(("Used Mem", f"{self.get_size(svmem.used)}"))
         values.append(("Percentage", f"{self.get_size(svmem.percent)}%"))
-        
+
         values.append(("Total Swap", f"{self.get_size(swap.total)}"))
         values.append(("Free Swap", f"{self.get_size(swap.free)}"))
         values.append(("Used Swap", f"{self.get_size(swap.used)}"))
         values.append(("Percentage Swap", f"{self.get_size(swap.percent)}%"))
-        
+
         rtval = tabulate.tabulate(values, headers=headers)
         return rtval
 
     def get_disk_info(self):
-        headers = ("Device", "Mountpoint", "File System", "Total Size", "Used", "Free", "Percentage")
+        headers = ("Device", "Mountpoint", "File System",
+                   "Total Size", "Used", "Free", "Percentage")
         values = []
 
         partitions = psutil.disk_partitions()
@@ -103,16 +105,20 @@ class SYSINFO:
                 toappend.append(self.get_size(partition_usage.free))
                 toappend.append(self.get_size(partition_usage.percent))
             except PermissionError:
-                toappend.append(" "); toappend.append(" "); toappend.append(" "); toappend.append(" "); 
-            
+                toappend.append(" ")
+                toappend.append(" ")
+                toappend.append(" ")
+                toappend.append(" ")
+
             values.append(toappend)
             toappend = []
 
         rtval = tabulate.tabulate(values, headers=headers)
-        return rtval             
+        return rtval
 
     def get_net_info(self):
-        headers = ('Interface', 'IP Address', 'MAC Address', 'Netmask', 'Broadcast IP', 'Broadcast MAC')
+        headers = ('Interface', 'IP Address', 'MAC Address',
+                   'Netmask', 'Broadcast IP', 'Broadcast MAC')
         values = []
 
         if_addrs = psutil.net_if_addrs()
@@ -132,7 +138,7 @@ class SYSINFO:
                     toappend.append(address.netmask)
                     toappend.append('')
                     toappend.append(address.broadcast)
-                
+
                 values.append(toappend)
                 toappend = []
 
@@ -141,5 +147,5 @@ class SYSINFO:
 
     def get_data(self):
         self.DATA_STRING = "\n" + self.sysinfo + "\n\n" + self.boot_time + "\n\n" + self.cpu_info + "\n\n" + \
-                            self.mem_usage + "\n\n" + self.disk_info + "\n\n" + self.net_info + "\n\n"
+            self.mem_usage + "\n\n" + self.disk_info + "\n\n" + self.net_info + "\n\n"
         return self.DATA_STRING

