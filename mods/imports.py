@@ -14,4 +14,9 @@ import subprocess
 import threading
 import pyscreenshot
 from datetime import datetime
-from pynput.keyboard import Key, Listener
+import Xlib
+try:
+    from pynput.keyboard import Listener
+    HAVE_X = True
+except Xlib.error.DisplayNameError:
+    HAVE_X = False
